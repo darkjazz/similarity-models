@@ -16,11 +16,16 @@ class WeightMatcher:
 		self.artists = { }
 		for _id in self.sdb:
 			doc = self.sdb.get(_id)
-			self.artists[_id] = self.convert_recordings(doc)
+			self.artists[_id] = self.select_recordings(doc)
 		self.ids = list(self.artists.keys())
+		print("Artists loaded, assigning sums ... ")
 
-	def convert_recordings(self, doc):
-		doc["recordings"] = list(doc["recordings"].values())
+	def select_recordings(self, doc):
+		recordings = list(doc["recordings"].values())
+		features = { }
+		for _ftr in self.create_sums():
+			features[_ftr] = np.matrix([ r[_ftr] for r in self.select(recordings, _ftr) ])
+		doc["recordings"] = features
 		return doc
 
 	def iterate(self):
@@ -32,7 +37,7 @@ class WeightMatcher:
 				if not "sums" in self.artists[_other]:
 					self.artists[_other]["sums"] = self.create_sums()
 				for _ftr in self.artists[_id]["sums"]:
-					sum = self.assign_sum_pairwise(self.artists[_id], self.artists[_other], _ftr)
+					sum = self.assign_sum_pairwise(self.artists[_id]["recordings"][_ftr], self.artists[_other]["recordings"][_ftr])
 					self.artists[_id]["sums"][_ftr].append({ "id": _other, "name": self.artists[_other]["name"], "sum": sum })
 					self.artists[_other]["sums"][_ftr].append({ "id": _id, "name": self.artists[_id]["name"], "sum": sum })
 			print(_id, self.artists[_id]["name"])
@@ -49,10 +54,7 @@ class WeightMatcher:
 	def select(self, recordings, feature):
 		return sorted(recordings, key=lambda x: x["centroid_distances"][feature])[:MAX_RECS]
 
-	def assign_sum_pairwise(self, artistA, artistB, feature):
-		source, target = sorted([artistA, artistB], key=lambda x: x["track_count"])
-		a = np.matrix([ r[feature] for r in self.select(target["recordings"], feature) ])
-		b = np.matrix([ r[feature] for r in self.select(source["recordings"], feature) ])
+	def assign_sum_pairwise(self, a, b):
 		distance_array = pairwise_distances(a, b)
 		row_ind, col_ind = linear_sum_assignment(distance_array)
 		return np.sqrt(distance_array[row_ind, col_ind].sum())
