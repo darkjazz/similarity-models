@@ -2,6 +2,7 @@ import couchdb, json
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from sklearn.metrics import pairwise_distances
+import multiprocessing as mp
 
 MAX_NEAREST = 13
 MAX_RECS = 7
@@ -11,6 +12,7 @@ class WeightMatcher:
 	def __init__(self):
 		srv = couchdb.Server()
 		self.sdb = srv["ab_11_plus"]
+		self.pool = mp.Pool(mp.cpu_count())
 
 	def get_artists(self):
 		self.artists = { }
@@ -33,14 +35,17 @@ class WeightMatcher:
 		for _id in self.ids:
 			self.shrink.remove(_id)
 			self.artists[_id]["sums"] = self.create_sums()
-			for _other in self.shrink:
-				if not "sums" in self.artists[_other]:
-					self.artists[_other]["sums"] = self.create_sums()
-				for _ftr in self.artists[_id]["sums"]:
-					sum = self.assign_sum_pairwise(self.artists[_id]["recordings"][_ftr], self.artists[_other]["recordings"][_ftr])
-					self.artists[_id]["sums"][_ftr].append({ "id": _other, "name": self.artists[_other]["name"], "sum": sum })
-					self.artists[_other]["sums"][_ftr].append({ "id": _id, "name": self.artists[_id]["name"], "sum": sum })
+			[ self.pool.apply_async(self.process_artist, args = (_other, _id)) for _other in self.shrink ]
 			print(_id, self.artists[_id]["name"])
+		self.pool.close()
+
+	def process_artist(self, _other, _id):
+		if not "sums" in self.artists[_other]:
+			self.artists[_other]["sums"] = self.create_sums()
+		for _ftr in self.artists[_id]["sums"]:
+			sum = self.assign_sum_pairwise(self.artists[_id]["recordings"][_ftr], self.artists[_other]["recordings"][_ftr])
+			self.artists[_id]["sums"][_ftr].append({ "id": _other, "name": self.artists[_other]["name"], "sum": sum })
+			self.artists[_other]["sums"][_ftr].append({ "id": _id, "name": self.artists[_id]["name"], "sum": sum })
 
 	def create_sums(self):
 		return { "mfcc": [], "chords": [], "rhythm": [] }
