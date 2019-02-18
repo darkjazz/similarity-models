@@ -37,22 +37,9 @@ def assign_sum_pairwise(a, b):
 
 if __name__ == '__main__':
 
-	MAX_NEAREST = 13
-	MAX_RECS = 7
+	MAX_NEAREST = 3
+	MAX_RECS = 11
 	DB_PATH = "../data/ab_db.json"
-
-	TEST_IDS = [
-	"0003fd17-b083-41fe-83a9-d550bd4f00a1",
-	"0004537a-4b12-43eb-a023-04009e738d2e",
-	"0005682c-3083-415e-ae4c-debd7be3e47e",
-	"0006c824-595a-45af-9374-238ce585fa3a",
-	"0008af7d-2aa1-4b4d-80af-b3b64ee3cac6",
-	"000ba849-700e-452e-8858-0db591587e4a",
-	"000e6dda-32fa-4cdf-8f65-4825e13c5f6f",
-	"000fc734-b7e1-4a01-92d1-f544261b43f5",
-	"000fecd9-ae03-49bc-9a08-636dde5d405d",
-	"00112dec-e09a-462d-86f3-1e6c64ee65a1"
-	]
 
 	srv = couchdb.Server()
 	sdb = srv["ab_11_plus"]
@@ -61,7 +48,7 @@ if __name__ == '__main__':
 	results = []
 
 	artists = { }
-	for _id in sdb:
+	for _id in TEST_IDS:
 		doc = sdb.get(_id)
 		artists[_id] = select_recordings(doc)
 	ids = list(artists.keys())[:1000]
@@ -77,5 +64,27 @@ if __name__ == '__main__':
 	pool.close()
 	pool.join()
 
+	all_sums = { }
+
 	for r in results:
-		print(r)
+		_id = r['_id']
+		_od = r['_od']
+		if not _id in all_sums:
+			all_sums[_id] = create_sums()
+		if not _od in all_sums:
+			all_sums[_od] = create_sums()
+		for _ftr in create_sums():
+			all_sums[_id][_ftr].append({ '_id': _od, 'name': artists[_od]["name"], 'sum': r[_ftr] })
+
+	db = { }
+
+	for _id in all_sums:
+		top_sums = { }
+		print(_id)
+		for _ftr in all_sums[_id]:
+			top_sums[_ftr] = sorted(all_sums[_id][_ftr], key=lambda x: x["sum"])[:MAX_NEAREST]
+		db[_id] = top_sums
+
+	with open(DB_PATH, "w") as write_json:
+		write_json.write(json.dumps(db))
+		write_json.close()
