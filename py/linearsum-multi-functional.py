@@ -48,7 +48,7 @@ if __name__ == '__main__':
 	results = []
 
 	artists = { }
-	for _id in TEST_IDS:
+	for _id in sdb:
 		doc = sdb.get(_id)
 		artists[_id] = select_recordings(doc)
 	ids = list(artists.keys())[:1000]
