@@ -7,7 +7,7 @@ import time
 MAX_NEAREST = 13
 MAX_RECS = 11
 DB_PATH = "../data/ab_db.json"
-NUM_ARTISTS = 100
+NUM_ARTISTS = 1000
 
 class WeightMatcher:
 	def __init__(self):
@@ -16,7 +16,7 @@ class WeightMatcher:
 
 	def get_artists(self):
 		self.artists = { }
-		for _id in self.load_ids(NUM_ARTISTS):
+		for _id in self.load_ids():
 			doc = self.sdb.get(_id)
 			self.artists[_id] = self.select_recordings(doc)
 		self.ids = list(self.artists.keys())
@@ -35,14 +35,28 @@ class WeightMatcher:
 		for _id in self.ids:
 			self.shrink.remove(_id)
 			self.artists[_id]["sums"] = self.create_sums()
+			times = []
 			for _other in self.shrink:
 				if not "sums" in self.artists[_other]:
 					self.artists[_other]["sums"] = self.create_sums()
+				t = time.time()
 				for _ftr in self.artists[_id]["sums"]:
 					sum = self.assign_sum_pairwise(self.artists[_id]["recordings"][_ftr], self.artists[_other]["recordings"][_ftr])
 					self.artists[_id]["sums"][_ftr].append({ "id": _other, "name": self.artists[_other]["name"], "sum": sum })
 					self.artists[_other]["sums"][_ftr].append({ "id": _id, "name": self.artists[_id]["name"], "sum": sum })
-			print(_id, self.artists[_id]["name"])
+				ti = time.time() - t
+				times.append(ti)
+			if not times:
+				times = [0]
+			left = len(self.shrink) * len(self.ids) * np.mean(times) / 60.0
+			print(_id, self.artists[_id]["name"], round(left, 2), " minutes left")
+
+	def calculate_time_left(self, interval):
+		total = len(self.ids) * (len(self.ids) - 1)
+		left = len(self.shrink) * len(self.ids)
+		total_time = interval * float(total)
+		time_left = interval * float(left)
+		return time_left
 
 	def create_sums(self):
 		return { "mfcc": [], "chords": [], "rhythm": [] }
@@ -79,7 +93,6 @@ class WeightMatcher:
 			for _ftr in self.artists[_id]["sums"]:
 				sums[_ftr] = sorted(self.artists[_id]["sums"][_ftr], key=lambda x: x["sum"])[:MAX_NEAREST]
 			self.db[_id] = sums
-			print(_id)
 
 	def write_db(self):
 		self.collect_db()
