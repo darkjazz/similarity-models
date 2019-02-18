@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from sklearn.metrics import pairwise_distances
 import multiprocessing as mp
+import time
 
 def select(recordings, feature):
 	return sorted(recordings, key=lambda x: x["centroid_distances"][feature])[:MAX_RECS]
@@ -35,17 +36,24 @@ def assign_sum_pairwise(a, b):
 	row_ind, col_ind = linear_sum_assignment(distance_array)
 	return np.sqrt(distance_array[row_ind, col_ind].sum())
 
-def load_ids():
-	ids = ""
+def load_ids(limit=None):
+	str = ""
 	with open('../data/ab_11.id', 'r') as rf:
-		ids = rf.read()
-	return ids.split("\n")[:-1]
+		str = rf.read()
+	_ids = str.split("\n")[:-1]
+	if limit is None:
+		return _ids
+	else:
+		return _ids[:limit]
 
 if __name__ == '__main__':
+
+	a = time.time()
 
 	MAX_NEAREST = 13
 	MAX_RECS = 11
 	DB_PATH = "../data/ab_db.json"
+
 
 	srv = couchdb.Server()
 	sdb = srv["ab_11_plus"]
@@ -54,8 +62,8 @@ if __name__ == '__main__':
 	results = []
 
 	artists = { }
-	i = load_ids()
-	for _id in i[:1000]:
+	i = load_ids(100)
+	for _id in i:
 		doc = sdb.get(_id)
 		artists[_id] = select_recordings(doc)
 	ids = list(artists.keys())
@@ -95,3 +103,7 @@ if __name__ == '__main__':
 	with open(DB_PATH, "w") as write_json:
 		write_json.write(json.dumps(db))
 		write_json.close()
+
+	b = time.time()
+
+	print(b - a)

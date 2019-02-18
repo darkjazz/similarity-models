@@ -2,10 +2,12 @@ import couchdb, json
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from sklearn.metrics import pairwise_distances
+import time
 
 MAX_NEAREST = 13
 MAX_RECS = 11
 DB_PATH = "../data/ab_db.json"
+NUM_ARTISTS = 100
 
 class WeightMatcher:
 	def __init__(self):
@@ -14,7 +16,7 @@ class WeightMatcher:
 
 	def get_artists(self):
 		self.artists = { }
-		for _id in self.sdb:
+		for _id in self.load_ids(NUM_ARTISTS):
 			doc = self.sdb.get(_id)
 			self.artists[_id] = self.select_recordings(doc)
 		self.ids = list(self.artists.keys())
@@ -85,8 +87,21 @@ class WeightMatcher:
 			write_json.write(json.dumps(self.db))
 			write_json.close()
 
+	def load_ids(self, limit=None):
+		str = ""
+		with open('../data/ab_11.id', 'r') as rf:
+			str = rf.read()
+		ids = str.split("\n")[:-1]
+		if limit is None:
+			return ids
+		else:
+			return ids[:limit]
+
 if __name__ == "__main__":
+	a = time.time()
 	w = WeightMatcher()
 	w.get_artists()
 	w.iterate()
 	w.write_db()
+	b = time.time()
+	print(b - a)
