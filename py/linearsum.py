@@ -4,7 +4,7 @@ from scipy.optimize import linear_sum_assignment
 from sklearn.metrics import pairwise_distances
 
 MAX_NEAREST = 13
-MAX_RECS = 7
+MAX_RECS = 11
 DB_PATH = "../data/ab_db.json"
 
 class WeightMatcher:

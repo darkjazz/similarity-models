@@ -5,7 +5,7 @@ from sklearn.metrics import pairwise_distances
 import multiprocessing as mp
 
 MAX_NEAREST = 13
-MAX_RECS = 7
+MAX_RECS = 11
 DB_PATH = "../data/ab_db.json"
 
 class WeightMatcher:

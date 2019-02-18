@@ -28,16 +28,22 @@ def process_artist(_other, _id, artists):
 def append_result(result):
 	global results
 	for r in result:
-		results.append(r.get())
+		results.append(r)
 
 def assign_sum_pairwise(a, b):
 	distance_array = pairwise_distances(a, b)
 	row_ind, col_ind = linear_sum_assignment(distance_array)
 	return np.sqrt(distance_array[row_ind, col_ind].sum())
 
+def load_ids():
+	ids = ""
+	with open('../data/ab_11.id', 'r') as rf:
+		ids = rf.read()
+	return ids.split("\n")[:-1]
+
 if __name__ == '__main__':
 
-	MAX_NEAREST = 3
+	MAX_NEAREST = 13
 	MAX_RECS = 11
 	DB_PATH = "../data/ab_db.json"
 
@@ -48,16 +54,17 @@ if __name__ == '__main__':
 	results = []
 
 	artists = { }
-	for _id in sdb:
+	i = load_ids()
+	for _id in i[:1000]:
 		doc = sdb.get(_id)
 		artists[_id] = select_recordings(doc)
-	ids = list(artists.keys())[:1000]
+	ids = list(artists.keys())
 	print("Artists loaded, assigning sums ... ")
 
 	shrink = ids.copy()
 	for _id in ids:
 		shrink.remove(_id)
-		result = [ pool.apply_async(process_artist, args = (_other, _id, artists)) for _other in shrink ]
+		result = [ pool.apply(process_artist, args = (_other, _id, artists)) for _other in shrink ]
 		append_result(result)
 		print(_id, artists[_id]["name"])
 

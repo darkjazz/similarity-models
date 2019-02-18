@@ -72,6 +72,14 @@ class CouchBuilder:
 				self.tdb.save(doc)
 				print(_id)
 
+	def export_ids(self):
+		id_str = ""
+		for _id in self.tdb:
+			id_str += _id + "\n"
+		with open('../data/ab_11.id', 'w') as ws:
+			ws.write(id_str)
+
 if __name__ == "__main__":
 	c = CouchBuilder()
+	# c.export_ids()
 	c.build_db()
