@@ -3,7 +3,7 @@ import numpy as np
 
 MAX_RECS = 11
 MAX_NEAREST = 13
-DB_PATH = "../../data/ab_db.json"
+DB_PATH = "../data/ab_db.json"
 
 class ArtistData:
 	def __init__(self):
@@ -53,6 +53,7 @@ class ArtistData:
 			js.close()
 		return ids
 
+	# def inspect_db(self):
 	def collect_db(self, artists):
 		self.db = {}
 		for _id in artists:
