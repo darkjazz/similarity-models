@@ -54,27 +54,46 @@ class ArtistData:
 		return ids
 
 	def inspect_db(self, feature, limit=5):
-        with open(DB_PATH, "r") as js:
-            self.db = json.load(js)
-            js.close()
-        for _id in self.db:
-            artist = self.db[_id]
-            doc = self.sdb.get(_id)
-            print(doc["name"])
-            print("----")
-            for similar in artist[feature][:limit]:
-                print(similar)
+		with open(DB_PATH, "r") as js:
+			self.db = json.load(js)
+			js.close()
+		for _id in self.db:
+			artist = self.db[_id]
+			doc = self.sdb.get(_id)
+			print("\n\n", doc["name"])
+			print("----")
+			for similar in artist[feature][:limit]:
+				print(similar)
 
-	def collect_db(self, artists):
-		self.db = {}
+	def collect_db(self, artists, sums):
+		self.db = { }
+		for _item in sums:
+			if 'sums' not in artists[_item['_id']]:
+				artists[_item['_id']]['sums'] = self.create_sums()
+			if 'sums' not in artists[_item['_od']]:
+				artists[_item['_od']]['sums'] = self.create_sums()
+			for _ftr in _item['sums']:
+				artists[_item['_id']]['sums'][_ftr].append({
+					'id': _item['_od'],
+					'name': artists[_item['_od']]['name'],
+					'sum': _item['sums'][_ftr]
+				})
+				artists[_item['_od']]['sums'][_ftr].append({
+					'id': _item['_id'],
+					'name': artists[_item['_id']]['name'],
+					'sum': _item['sums'][_ftr]
+				})
 		for _id in artists:
 			sums = {}
 			for _ftr in artists[_id]["sums"]:
 				sums[_ftr] = sorted(artists[_id]["sums"][_ftr], key=lambda x: x["sum"])[:MAX_NEAREST]
 			self.db[_id] = sums
 
-	def write_db(self, artists):
-		self.collect_db(artists)
+	def create_sums(self):
+		return { "mfcc": [], "chords": [], "rhythm": [] }
+
+	def write_db(self, artists, sums):
+		self.collect_db(artists, sums)
 		with open(DB_PATH, "w") as write_json:
 			write_json.write(json.dumps(self.db))
 			write_json.close()

@@ -18,18 +18,16 @@ class WeightMatcher:
 
 	def iterate(self):
 		self.shrink = self.ids.copy()
+		self.sums = []
 		for _id in self.ids:
 			self.shrink.remove(_id)
-			self.artists[_id]["sums"] = self.create_sums()
 			times = []
 			for _other in self.shrink:
-				if not "sums" in self.artists[_other]:
-					self.artists[_other]["sums"] = self.create_sums()
 				t = time.time()
-				for _ftr in self.artists[_id]["sums"]:
-					sum = self.assign_sum_pairwise(self.artists[_id]["recordings"][_ftr], self.artists[_other]["recordings"][_ftr])
-					self.artists[_id]["sums"][_ftr].append({ "id": _other, "name": self.artists[_other]["name"], "sum": sum })
-					self.artists[_other]["sums"][_ftr].append({ "id": _id, "name": self.artists[_id]["name"], "sum": sum })
+				sums = { }
+				for _ftr in self.data.create_sums():
+					sums[_ftr] = self.assign_sum_pairwise(self.artists[_id]["recordings"][_ftr], self.artists[_other]["recordings"][_ftr])
+				self.sums.append({ '_id': _id, '_od': _other, 'sums': sums })
 				ti = time.time() - t
 				times.append(ti)
 			if not times:
@@ -44,16 +42,13 @@ class WeightMatcher:
 		time_left = interval * float(left)
 		return time_left
 
-	def create_sums(self):
-		return { "mfcc": [], "chords": [], "rhythm": [] }
-
 	def assign_sum_pairwise(self, a, b):
 		distance_array = pairwise_distances(a, b)
-		indexes = self.munkres.compute(distance_array)
+		indexes = self.munkres.compute(distance_array.copy())
 		return np.sqrt(np.sum([ distance_array[x][y] for x, y in indexes ]))
 
 	def save(self):
-		self.data.write_db(self.artists)
+		self.data.write_db(self.artists, self.sums)
 
 if __name__ == "__main__":
 	a = time.time()
