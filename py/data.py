@@ -54,16 +54,16 @@ class ArtistData:
 		return ids
 
 	def inspect_db(self, feature, limit=5):
-        with open(DB_PATH, "r") as js:
-            self.db = json.load(js)
-            js.close()
-        for _id in self.db:
-            artist = self.db[_id]
-            doc = self.sdb.get(_id)
-            print(doc["name"])
-            print("----")
-            for similar in artist[feature][:limit]:
-                print(similar)
+		with open(DB_PATH, "r") as js:
+			self.db = json.load(js)
+			js.close()
+		for _id in self.db:
+			artist = self.db[_id]
+			doc = self.sdb.get(_id)
+			print(doc["name"])
+			print("----")
+			for similar in artist[feature][:limit]:
+				print(similar)
 
 	def collect_db(self, artists):
 		self.db = {}
