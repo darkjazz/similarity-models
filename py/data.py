@@ -103,7 +103,6 @@ class ArtistData:
 	def save(self, artists, sums):
 		artists = self.collect_db(artists, sums)
 		for _id in self.db:
-			artist = artists[_id]
-			artist['_id'] = _id
-			del artist['recordings']
-			self.tdb.save(artist)
+			sums = self.db[_id]
+			sums['_id'] = _id
+			self.tdb.save(sums)
