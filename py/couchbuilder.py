@@ -63,9 +63,9 @@ class CouchBuilder:
 		return doc
 
 	def build_db(self):
-		for _id in self.sdb:
-			doc = self.get_doc(_id)
-			if not doc is None and doc["track_count"] > 10:
+		for row in self.sdb.view("views/artist_by_mbid"):
+			doc = row.value
+			if doc["track_count"] > 10:
 				doc["aggregates"] = self.aggregate_features(doc["recordings"])
 				doc = self.update_recordings(doc)
 				doc["_id"] = _id
