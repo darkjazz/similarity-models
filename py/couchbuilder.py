@@ -7,17 +7,18 @@ class CouchBuilder:
 		srv = couchdb.Server()
 		self.tdb = srv["ab_11_plus"]
 		self.sdb = srv["ab_features_o15"]
+		print("Connected to databases")
 
 	def convert_recordings(self, recordings):
 		obj = {}
-		for recording in recordings:
-			if recording["title"] not in obj:
-				obj[recording["title"]] = self.get_feature_vectors(recording)
+		for _title in recordings:
+			if _title not in obj:
+				obj[_title] = self.get_feature_vectors(recordings[_title])
 		return obj
 
 	def get_feature_vectors(self, recording):
-		mfcc = eval(recording["mfcc"])
-		dev = np.sqrt(np.array(eval(recording["cov"])).diagonal()).tolist()
+		mfcc = eval(recording["mfcc"]["mean"])
+		dev = np.sqrt(np.array(eval(recording["mfcc"]["cov"])).diagonal()).tolist()
 		mfcc.extend(dev)
 		chords = eval(recording["chords_histogram"])
 		bps = eval(recording["bpm"]) / 60.0
@@ -65,12 +66,17 @@ class CouchBuilder:
 	def build_db(self):
 		for row in self.sdb.view("views/artist_by_mbid"):
 			doc = row.value
-			if doc["track_count"] > 10:
-				doc["aggregates"] = self.aggregate_features(doc["recordings"])
-				doc = self.update_recordings(doc)
-				doc["_id"] = _id
-				self.tdb.save(doc)
-				print(_id)
+			_id = row.key
+			print(_id)
+			# doc['recordings'] = self.convert_recordings(doc['recordings'])
+			# if not doc is None and len(doc["recordings"].keys()) != doc["track_count"]:
+			# 	doc["track_count"] = len(doc["recordings"].keys())
+			# if doc["track_count"] > 10:
+			# 	doc["aggregates"] = self.aggregate_features(doc["recordings"])
+			# 	doc = self.update_recordings(doc)
+			# 	doc["_id"] = _id
+			# 	self.tdb.save(doc)
+			# 	print(_id)
 
 	def export_ids(self):
 		id_str = ""
@@ -81,5 +87,4 @@ class CouchBuilder:
 
 if __name__ == "__main__":
 	c = CouchBuilder()
-	# c.export_ids()
 	c.build_db()

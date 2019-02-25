@@ -4,7 +4,7 @@ from munkres import Munkres
 from data import ArtistData
 import time
 
-NUM_ARTISTS = -1
+NUM_ARTISTS = 100
 USE_SUBSET = False
 
 class WeightMatcher:
@@ -44,12 +44,13 @@ class WeightMatcher:
 
 	def assign_sum_pairwise(self, a, b):
 		distance_array = pairwise_distances(a, b)
-		return np.mean(distance_array)
-		# indexes = self.munkres.compute(distance_array.copy())
-		# return np.sqrt(np.sum([ distance_array[x][y] for x, y in indexes ]))
+		return np.mean(distance_array.tolist())
+
+	def write(self):
+		self.data.write_db(self.artists, self.sums)
 
 	def save(self):
-		self.data.write_db(self.artists, self.sums)
+		self.data.save(self.artists, self.sums)
 
 if __name__ == "__main__":
 	a = time.time()

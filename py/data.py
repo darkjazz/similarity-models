@@ -8,7 +8,8 @@ DB_PATH = "../data/ab_db.json"
 class ArtistData:
 	def __init__(self):
 		srv = couchdb.Server()
-		self.sdb = srv["ab_11_plus"]
+		self.sdb = srv['ab_11_plus']
+		self.tdb = srv['ab_sums']
 
 	def get_artists(self, limit=0, use_subset=False):
 		self.artists = { }
@@ -88,12 +89,20 @@ class ArtistData:
 			for _ftr in artists[_id]["sums"]:
 				sums[_ftr] = sorted(artists[_id]["sums"][_ftr], key=lambda x: x["sum"])[:MAX_NEAREST]
 			self.db[_id] = sums
+		return artists
 
 	def create_sums(self):
 		return { "mfcc": [], "chords": [], "rhythm": [] }
 
 	def write_db(self, artists, sums):
-		self.collect_db(artists, sums)
+		artists = self.collect_db(artists, sums)
 		with open(DB_PATH, "w") as write_json:
 			write_json.write(json.dumps(self.db))
 			write_json.close()
+
+	def save(self, artists, sums):
+		artists = self.collect_db(artists, sums)
+		for _id in self.db:
+			sums = self.db[_id]
+			sums['_id'] = _id
+			self.tdb.save(sums)
