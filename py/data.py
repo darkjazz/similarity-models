@@ -3,12 +3,12 @@ import numpy as np
 
 MAX_RECS = 11
 MAX_NEAREST = 13
-DB_PATH = "../data/ab_db.json"
+DB_PATH = "../data/ab_db_%s.json"
 
 class ArtistData:
 	def __init__(self):
 		srv = couchdb.Server()
-		self.sdb = srv['ab_11_plus']
+		self.sdb = srv['ab_o11']
 		self.tdb = srv['ab_sums']
 
 	def get_artists(self, limit=0, use_subset=False):
@@ -66,37 +66,36 @@ class ArtistData:
 			for similar in artist[feature][:limit]:
 				print(similar)
 
-	def collect_db(self, artists, sums):
+	def collect_db(self, feature):
 		self.db = { }
-		for _item in sums:
-			if 'sums' not in artists[_item['_id']]:
-				artists[_item['_id']]['sums'] = self.create_sums()
-			if 'sums' not in artists[_item['_od']]:
-				artists[_item['_od']]['sums'] = self.create_sums()
-			for _ftr in _item['sums']:
-				artists[_item['_id']]['sums'][_ftr].append({
-					'id': _item['_od'],
-					'name': artists[_item['_od']]['name'],
-					'sum': _item['sums'][_ftr]
-				})
-				artists[_item['_od']]['sums'][_ftr].append({
-					'id': _item['_id'],
-					'name': artists[_item['_id']]['name'],
-					'sum': _item['sums'][_ftr]
-				})
-		for _id in artists:
-			sums = {}
-			for _ftr in artists[_id]["sums"]:
-				sums[_ftr] = sorted(artists[_id]["sums"][_ftr], key=lambda x: x["sum"])[:MAX_NEAREST]
-			self.db[_id] = sums
-		return artists
+		self.ids = self.load_ids()
+		rows = [ ]
+		for _id in self.ids:
+			sums = self.get_doc(_id, feature)
+			for _sum in sums:
+				rows.append({ '_id': _id, '_od': _sum['_id'], 'sum': _sum['sum'] })
+			print(_id)
+		for _sum in rows:
+			if not _sum['_id'] in self.db:
+				self.db[_sum['_id']] = [ ]
+			if not _sum['_od'] in self.db:
+				self.db[_sum['_od']] = [ ]
+			self.db[_sum['_id']].append({ '_id': _sum['_od'], 'sum': _sum['sum'] })
+			self.db[_sum['_od']].append({ '_id': _sum['_id'], 'sum': _sum['sum'] })
+		for _id in self.db:
+			self.db[_id] = sorted(self.db[_id], key=lambda x: x["sum"])[:MAX_NEAREST]
+			print(_id)
+
+	def get_doc(self, id, feature):
+		doc = self.tdb.get(id)
+		return doc['sums'][feature]
 
 	def create_sums(self):
 		return { "mfcc": [], "chords": [], "rhythm": [] }
 
-	def write_db(self, artists, sums):
-		artists = self.collect_db(artists, sums)
-		with open(DB_PATH, "w") as write_json:
+	def write_db(self, feature):
+		self.collect_db(feature)
+		with open(DB_PATH % feature, "w") as write_json:
 			write_json.write(json.dumps(self.db))
 			write_json.close()
 

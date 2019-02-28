@@ -5,7 +5,7 @@ from scipy.spatial.distance import euclidean
 class CouchBuilder:
 	def __init__(self):
 		srv = couchdb.Server()
-		self.tdb = srv["ab_11_plus"]
+		self.tdb = srv["ab_o11"]
 		self.sdb = srv["ab_features_o15"]
 		print("Connected to databases")
 
@@ -64,19 +64,21 @@ class CouchBuilder:
 		return doc
 
 	def build_db(self):
+		count = 0
 		for row in self.sdb.view("views/artist_by_mbid"):
 			doc = row.value
 			_id = row.key
-			print(_id)
-			# doc['recordings'] = self.convert_recordings(doc['recordings'])
-			# if not doc is None and len(doc["recordings"].keys()) != doc["track_count"]:
-			# 	doc["track_count"] = len(doc["recordings"].keys())
-			# if doc["track_count"] > 10:
-			# 	doc["aggregates"] = self.aggregate_features(doc["recordings"])
-			# 	doc = self.update_recordings(doc)
-			# 	doc["_id"] = _id
-			# 	self.tdb.save(doc)
-			# 	print(_id)
+			# print(_id)
+			doc['recordings'] = self.convert_recordings(doc['recordings'])
+			if not doc is None and len(doc["recordings"].keys()) != doc["track_count"]:
+				doc["track_count"] = len(doc["recordings"].keys())
+			if doc["track_count"] > 10:
+				doc["aggregates"] = self.aggregate_features(doc["recordings"])
+				doc = self.update_recordings(doc)
+				doc["_id"] = _id
+				self.tdb.save(doc)
+				count += 1
+				print(_id, count)
 
 	def export_ids(self):
 		id_str = ""
