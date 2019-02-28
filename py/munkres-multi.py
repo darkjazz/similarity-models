@@ -35,7 +35,7 @@ def assign_sum_pairwise(a, b):
 	distance_array = pairwise_distances(a, b)
 	indexes = self.munkres.compute(distance_array)
 	return np.sqrt(np.sum([ distance_array[x][y] for x, y in indexes ]))
-	
+
 def load_ids(limit=None):
 	str = ""
 	with open('../data/ab_11.id', 'r') as rf:
@@ -53,7 +53,6 @@ if __name__ == '__main__':
 	MAX_NEAREST = 13
 	MAX_RECS = 11
 	DB_PATH = "../data/ab_db.json"
-
 
 	srv = couchdb.Server()
 	sdb = srv["ab_11_plus"]

@@ -1,7 +1,7 @@
 import couchdb, json
 import numpy as np
 
-MAX_RECS = 11
+MAX_RECS = 23
 MAX_NEAREST = 13
 DB_PATH = "../data/ab_db.json"
 
@@ -31,12 +31,36 @@ class ArtistData:
 			recordings = list(doc["recordings"].values())
 			features = { }
 			for _ftr in doc["aggregates"]:
-				features[_ftr] = np.matrix([ r[_ftr] for r in self.select(recordings, _ftr) ])
+				features[_ftr] = np.array([ r[_ftr] for r in self.select(recordings, _ftr) ])
 			doc["recordings"] = features
 		return doc
 
 	def select(self, recordings, feature):
 		return sorted(recordings, key=lambda x: x["centroid_distances"][feature])[:MAX_RECS]
+
+	def get_cluster_artists(self, feature='mfcc', limit=0, use_subset=False):
+		self.artists = { }
+		if use_subset:
+			ids = self.load_subset()
+		else:
+			if limit > 0:
+				ids = self.load_ids(limit)
+			else:
+				ids = self.load_ids()
+		for _id in ids:
+			doc = self.sdb.get(_id)
+			if not doc is None:
+				self.artists[_id] = self.select_cluster_recordings(doc, feature)
+		return self.artists
+
+	def select_cluster_recordings(self, doc, feature):
+		if not doc is None:
+			recordings = list(doc["recordings"].values())
+			recordings = self.select(recordings, feature)
+			features = np.array([ r[feature] for r in recordings  ])
+			doc["features"] = features
+			doc["recordings"] = recordings
+		return doc
 
 	def load_ids(self, limit=None):
 		str = ""
@@ -106,3 +130,26 @@ class ArtistData:
 			sums = self.db[_id]
 			sums['_id'] = _id
 			self.tdb.save(sums)
+
+	def get_statistics(self):
+		track_counts = []
+		for _id in self.sdb:
+			doc = self.sdb.get(_id)
+			track_counts.append(doc["track_count"])
+		print("Total tracks", np.sum(track_counts))
+		print("Mean # tracks", np.mean(track_counts))
+		print("Median # tracks", np.median(track_counts))
+
+	def get_subset_statistics(self):
+		track_counts = []
+		artist_count = 0
+		self.ids = self.load_subset()
+		for _id in self.ids:
+			doc = self.sdb.get(_id)
+			if not doc is None:
+				artist_count += 1
+				track_counts.append(doc["track_count"])
+		print("Total artists", np.sum(artist_count))
+		print("Total tracks", np.sum(track_counts))
+		print("Mean # tracks", np.mean(track_counts))
+		print("Median # tracks", np.median(track_counts))
