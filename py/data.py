@@ -9,7 +9,7 @@ DB_PATH = "../data/ab_db_%s.json"
 class ArtistData:
 	def __init__(self):
 		srv = couchdb.Server()
-		# self.sdb = srv['ab_o11']
+		self.sdb = srv['ab_11_plus']
 		self.tdb = srv['ab_sums']
 
 	def get_artists(self, limit=0, use_subset=False):
@@ -160,6 +160,9 @@ class DbMerger:
 		self.qdb = srv['ab_features_o15']
 		self.check_sum = 18330
 		self.ad = ArtistData()
+		self.map = {
+			'mfcc': 'timbre', 'chords': 'tonality', 'rhythm': 'rhythm'
+		}
 
 	def merge_ab_db(self):
 		self.load_files()
@@ -171,7 +174,7 @@ class DbMerger:
 		print("merging data ...")
 		self.db = { }
 		for _id in self.data['mfcc']:
-			self.db[_id] = self.ad.create_sums()
+			self.db[_id] = self.create_sums()
 		for _ftr in self.ad.create_sums():
 			print("working on %s feature" % _ftr)
 			bar = pb.ProgressBar(max_value=len(self.db))
@@ -181,9 +184,12 @@ class DbMerger:
 					name = self.names[_artist['_id']]
 					id = _artist['_id']
 					sum = _artist['sum']
-					self.db[_id][_ftr].append({ "id": id, "name": name, "div": sum })
+					self.db[_id][self.map[_ftr]].append({ "id": id, "name": name, "div": sum })
 				i += 1
 				bar.update(i)
+
+	def create_sums(self):
+		return { 'timbre': [], 'tonality': [], 'rhythm': [] }
 
 	def load_names(self):
 		self.names = { }

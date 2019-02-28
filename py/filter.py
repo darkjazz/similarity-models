@@ -25,6 +25,9 @@ class ArtistFilter:
     def get_artist_degree(self, name):
         return sum([ (1.0 / _c['weight']) for _c in self.artists[name] ])
 
+    def get_ranking(self, artists):
+        return sorted(artists, key=lambda a: a['ranking'], reverse=True)[:self.limit]
+
     def get_collaborative(self, artists, degree):
         for artist in artists:
             artist_degree = self.get_artist_degree(artist['name'])

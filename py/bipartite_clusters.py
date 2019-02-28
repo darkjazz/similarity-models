@@ -19,6 +19,8 @@ class BipartiteGraph:
                 similar = self.filter.get_max_degree(linked_artists, degree)
             elif type == 'heat-prob':
                 similar = self.filter.get_heat_prob(linked_artists, degree, lmb)
+            else:
+                similar = self.filter.get_ranking(linked_artists)
             self.print_artist(_name, similar)
 
     def print_artist(self, name, similar):
