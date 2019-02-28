@@ -1,5 +1,6 @@
 import couchdb, json
 import numpy as np
+import progressbar as pb
 
 MAX_RECS = 23
 MAX_NEAREST = 13
@@ -162,27 +163,35 @@ class DbMerger:
 
 	def merge_ab_db(self):
 		self.load_files()
+		self.load_names()
 		self.merge()
 		self.write_db()
 
 	def merge(self):
+		print("merging data ...")
 		self.db = { }
 		for _id in self.data['mfcc']:
 			self.db[_id] = self.ad.create_sums()
 		for _ftr in self.ad.create_sums():
+			print("working on %s feature" % _ftr)
+			bar = pb.ProgressBar(max_value=len(self.db))
+			i = 0
 			for _id in self.data[_ftr]:
 				for _artist in self.data[_ftr][_id]:
-					name = self.lookup_name(_artist['_id'])
+					name = self.names[_artist['_id']]
 					id = _artist['_id']
 					sum = _artist['sum']
 					self.db[_id][_ftr].append({ "id": id, "name": name, "div": sum })
+				i += 1
+				bar.update(i)
 
-	def lookup_name(self, _id):
+	def load_names(self):
+		self.names = { }
 		for row in self.qdb.view('views/name_by_mbid'):
-			name = row.value
-		return name
+			self.names[row.key] = row.value
 
 	def load_files(self):
+		print("loading files ...")
 		self.data = { }
 		for _ftr in self.ad.create_sums():
 			with open(DB_PATH % _ftr, 'r') as js:
@@ -190,6 +199,8 @@ class DbMerger:
 				js.close()
 
 	def write_db(self):
+		print("writing db ...")
 		with open(DB_PATH.replace("_%s", ""), "w") as write_json:
 			write_json.write(json.dumps(self.db))
 			write_json.close()
+		print("finished.")
