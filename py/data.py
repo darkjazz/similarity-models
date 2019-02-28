@@ -8,7 +8,7 @@ DB_PATH = "../data/ab_db_%s.json"
 class ArtistData:
 	def __init__(self):
 		srv = couchdb.Server()
-		self.sdb = srv['ab_o11']
+		# self.sdb = srv['ab_o11']
 		self.tdb = srv['ab_sums']
 
 	def get_artists(self, limit=0, use_subset=False):
@@ -152,3 +152,44 @@ class ArtistData:
 		print("Total tracks", np.sum(track_counts))
 		print("Mean # tracks", np.mean(track_counts))
 		print("Median # tracks", np.median(track_counts))
+
+class DbMerger:
+	def __init__(self):
+		srv = couchdb.Server()
+		self.qdb = srv['ab_features_o15']
+		self.check_sum = 18330
+		self.ad = ArtistData()
+
+	def merge_ab_db(self):
+		self.load_files()
+		self.merge()
+		self.write_db()
+
+	def merge(self):
+		self.db = { }
+		for _id in self.data['mfcc']:
+			self.db[_id] = self.ad.create_sums()
+		for _ftr in self.ad.create_sums():
+			for _id in self.data[_ftr]:
+				for _artist in self.data[_ftr][_id]:
+					name = self.lookup_name(_artist['_id'])
+					id = _artist['_id']
+					sum = _artist['sum']
+					self.db[_id][_ftr].append({ "id": id, "name": name, "div": sum })
+
+	def lookup_name(self, _id):
+		for row in self.qdb.view('views/name_by_mbid'):
+			name = row.value
+		return name
+
+	def load_files(self):
+		self.data = { }
+		for _ftr in self.ad.create_sums():
+			with open(DB_PATH % _ftr, 'r') as js:
+				self.data[_ftr] = json.load(js)
+				js.close()
+
+	def write_db(self):
+		with open(DB_PATH.replace("_%s", ""), "w") as write_json:
+			write_json.write(json.dumps(self.db))
+			write_json.close()
