@@ -11,6 +11,7 @@ class ArtistData:
 		srv = couchdb.Server()
 		self.sdb = srv['ab_11_plus']
 		self.tdb = srv['ab_sums']
+		self.cdb = srv['track_clusters']
 
 	def get_artists(self, limit=0, use_subset=False):
 		self.artists = { }
@@ -153,6 +154,10 @@ class ArtistData:
 		print("Total tracks", np.sum(track_counts))
 		print("Mean # tracks", np.mean(track_counts))
 		print("Median # tracks", np.median(track_counts))
+
+	def save_cluster_track(self, track):
+		print(track)
+		self.cdb.save(track)
 
 class DbMerger:
 	def __init__(self):

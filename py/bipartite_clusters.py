@@ -8,6 +8,9 @@ class BipartiteGraph:
     def make_clusters(self, feature='mfcc'):
         self.clusters.run(feature)
 
+    def assign_existing_clusters(self, clusters):
+        self.clusters = clusters
+
     def calculate_filter(self, type='max-degree', lmb=1.0):
         self.filter = ArtistFilter(self.clusters.artists, self.clusters.clusters)
         for _name in self.clusters.artists:
