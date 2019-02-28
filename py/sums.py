@@ -4,7 +4,7 @@ from munkres import Munkres
 from data import ArtistData
 import time
 
-NUM_ARTISTS = 100
+NUM_ARTISTS = -1
 USE_SUBSET = False
 
 class WeightMatcher:
@@ -18,21 +18,21 @@ class WeightMatcher:
 
 	def iterate(self):
 		self.shrink = self.ids.copy()
-		self.sums = []
 		for _id in self.ids:
 			self.shrink.remove(_id)
 			times = []
+			artist = { '_id': _id, 'sums': self.data.create_sums() }
 			for _other in self.shrink:
 				t = time.time()
-				sums = { }
 				for _ftr in self.data.create_sums():
-					sums[_ftr] = self.assign_sum_pairwise(self.artists[_id]["recordings"][_ftr], self.artists[_other]["recordings"][_ftr])
-				self.sums.append({ '_id': _id, '_od': _other, 'sums': sums })
+					sum = self.assign_sum_pairwise(self.artists[_id]["recordings"][_ftr], self.artists[_other]["recordings"][_ftr])
+					artist['sums'][_ftr].append({ '_id': _other, 'sum': sum })
 				ti = time.time() - t
 				times.append(ti)
 			if not times:
 				times = [0]
 			left = len(self.shrink) * len(self.ids) * np.mean(times) / 60.0
+			self.data.tdb.save(artist)
 			print(_id, self.artists[_id]["name"], round(left, 2), " minutes left")
 
 	def calculate_time_left(self, interval):
@@ -44,7 +44,7 @@ class WeightMatcher:
 
 	def assign_sum_pairwise(self, a, b):
 		distance_array = pairwise_distances(a, b)
-		return np.mean(distance_array).tolist()
+		return np.mean(distance_array.tolist())
 
 	def write(self):
 		self.data.write_db(self.artists, self.sums)
@@ -52,11 +52,14 @@ class WeightMatcher:
 	def save(self):
 		self.data.save(self.artists, self.sums)
 
+	def save_artist(self, artist):
+		self.data.save_artist(artist)
+
 if __name__ == "__main__":
 	a = time.time()
 	w = WeightMatcher()
 	w.get_artists()
 	w.iterate()
-	w.save()
+	# w.save()
 	b = time.time()
 	print(b - a)
