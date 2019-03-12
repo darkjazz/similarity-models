@@ -159,6 +159,20 @@ class ArtistData:
 		print(track)
 		self.cdb.save(track)
 
+class ClusterData:
+	def __init__(self):
+		srv = couchdb.Server()
+		self.db = srv["track_clusters"]
+
+	def get_clusters(self, clustering):
+		self.tracks = []
+		if clustering is None:
+			print('yo, wheres the clustering id, fr fcks sake')
+		else:
+			for row in self.db.view('views/track_by_clustering', key=clustering):
+				self.tracks.append(row.value)
+			print('%d tracks loaded ..' % len(self.tracks))
+
 class DbMerger:
 	def __init__(self):
 		srv = couchdb.Server()

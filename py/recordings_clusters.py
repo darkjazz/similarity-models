@@ -1,7 +1,7 @@
 import json, random
 import numpy as np
 import hdbscan as hd
-from data import ArtistData
+from data import ArtistData, ClusterData
 import time, uuid
 
 FEATURE = 'mfcc'
@@ -10,6 +10,11 @@ MIN_CLUSTER_SIZE = 11
 class RecordingsClusters:
 	def __init__(self):
 		self.data = ArtistData()
+		self.show_clusterings()
+
+	def show_clusterings(self):
+		for row in self.data.cdb.view("views/clusterings", group=True):
+			print(row.key, row.value)
 
 	def run(self, feature='mfcc', num_artists=-1, use_subset=True, save=False):
 		self.timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -46,9 +51,9 @@ class RecordingsClusters:
 
 	def make_clusters(self):
 		print("making clusters ..")
-		self.clusterer = hd.HDBSCAN(min_cluster_size=MIN_CLUSTER_SIZE, metric='minkowski',
+		self.clusterer = hd.HDBSCAN(min_cluster_size=MIN_CLUSTER_SIZE, metric='euclidean',
 			p=1, min_samples=1, cluster_selection_method='leaf', leaf_size=MIN_CLUSTER_SIZE*2,
-			prediction_data=True)
+			prediction_data=True, gen_min_span_tree=True, approx_min_span_tree=False)
 		result = self.clusterer.fit(self.features)
 		self.soft_clusters = hd.all_points_membership_vectors(self.clusterer)
 		print("finished making clusters ..")
@@ -95,6 +100,11 @@ class RecordingsClusters:
 			if not _name in self.artists:
 				self.artists[_name] = [ ]
 			self.artists[_name].append({ 'cluster': number, 'weight': 1.0 / cluster[_name] })
+
+	def load_clusters(self, id):
+		cluster_data = ClusterData()
+		cluster_data.get_clusters(id)
+		self.tracks = cluster_data.tracks
 
 	def print_clusters(self):
 		for _n in sorted(list(self.clusters.keys())):
