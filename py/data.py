@@ -1,10 +1,13 @@
 import couchdb, json
 import numpy as np
 import progressbar as pb
+import httplib2
+from urllib.parse import quote
 
 MAX_RECS = 23
 MAX_NEAREST = 13
 DB_PATH = "../data/ab_db_%s.json"
+SERVER_URI = 'http://127.0.0.1:8080/lastfm/get_top_tags/'
 
 class ArtistData:
 	def __init__(self):
@@ -155,6 +158,11 @@ class ArtistData:
 		print("Mean # tracks", np.mean(track_counts))
 		print("Median # tracks", np.median(track_counts))
 
+	def save_clustering(self, id):
+		with open('../data/clusterings.id', 'a') as wf:
+			wf.write(id+'\n')
+			wf.close()
+
 	def save_cluster_track(self, track):
 		print(track)
 		self.cdb.save(track)
@@ -229,3 +237,32 @@ class DbMerger:
 			write_json.write(json.dumps(self.db))
 			write_json.close()
 		print("finished.")
+
+class TagData:
+	def __init__(self):
+		srv = couchdb.Server()
+		self.db = srv["ab_subset"]
+		self.uri = SERVER_URI
+		self.load_subset()
+
+	def load_subset(self):
+		with open("../data/ab_subset.json") as js:
+			self.ids = json.load(js)
+			js.close()
+
+	def get_tags(self):
+		for _id in self.ids:
+			uri = SERVER_URI + _id['id'] + '/' + quote(_id['value'])
+			re, co = httplib2.Http().request(uri)
+			if re.status == 200:
+				res = json.loads(co)
+				if isinstance(res, list):
+					tags = [ ]
+					for _tag in res[:3]:
+						tags.append(_tag['name'])
+					doc = self.db.get(_id['key'])
+					# print(doc)
+					doc['tags'] = tags
+					self.db.delete(doc)
+					del doc['_rev']
+					self.db.save(doc)
