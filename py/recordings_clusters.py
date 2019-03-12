@@ -1,7 +1,7 @@
 import json, random
 import numpy as np
 import hdbscan as hd
-from data import ArtistData
+from data import ArtistData, ClusterData
 import time, uuid
 
 FEATURE = 'mfcc'
@@ -10,6 +10,14 @@ MIN_CLUSTER_SIZE = 11
 class RecordingsClusters:
 	def __init__(self):
 		self.data = ArtistData()
+		self.show_clusterings()
+
+	def show_clusterings(self):
+		with open('../data/clusterings.id', 'r') as f:
+			print("available clusterings:")
+			for _line in f.read().split("\n"):
+				print(_line)
+			f.close()
 
 	def run(self, feature='mfcc', num_artists=-1, use_subset=True, save=False):
 		self.timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -95,6 +103,11 @@ class RecordingsClusters:
 			if not _name in self.artists:
 				self.artists[_name] = [ ]
 			self.artists[_name].append({ 'cluster': number, 'weight': 1.0 / cluster[_name] })
+
+	def load_clusters(self, id):
+		cluster_data = ClusterData()
+		self.tracks = cluster_data.get_clusters(id)
+		self.collect_artists()
 
 	def print_clusters(self):
 		for _n in sorted(list(self.clusters.keys())):
