@@ -1,7 +1,7 @@
 import json, random
 import numpy as np
 import hdbscan as hd
-from data import ArtistData, ClusterData
+from data import ArtistData, ClusterData, TagData
 import time, uuid
 
 FEATURE = 'mfcc'
@@ -10,6 +10,7 @@ MIN_CLUSTER_SIZE = 11
 class RecordingsClusters:
 	def __init__(self):
 		self.data = ArtistData()
+		self.tag_data = TagData()
 		self.show_clusterings()
 
 	def show_clusterings(self):
@@ -48,6 +49,9 @@ class RecordingsClusters:
 			[ self.tracks.append({ "title": _rec['title'], "artist": artist['name'], "artist_id": _id }) for _rec in artist['recordings'] ]
 			self.features = np.array(features)
 		print("%d feature vectors of %d tracks by %d artists" % (len(self.features), len(self.tracks), len(artists)))
+		print("collecting tag data ..")
+		self.tag_data.get_artist_tags()
+		print("finished collecting tags ..")
 
 	def make_clusters(self):
 		print("making clusters ..")
@@ -83,8 +87,10 @@ class RecordingsClusters:
 		print("collecting artists ..")
 		self.clusters = { }
 		self.artists = { }
+		self.cluster_tags = { }
 		[ self.add_artist_to_cluster(t) for t in self.tracks ]
 		[ self.add_cluster_to_artists(n) for n in self.clusters ]
+		[ self.add_tags_to_cluster(t) for t in self.tracks ]
 
 	def add_artist_to_cluster(self, track):
 		if not track['cluster'] in self.clusters:
@@ -93,6 +99,20 @@ class RecordingsClusters:
 			self.clusters[track['cluster']][track['artist']] = 1
 		else:
 			self.clusters[track['cluster']][track['artist']] += 1
+		self.add_tags_to_cluster(track)
+
+	def add_tags_to_cluster(self, track):
+		cluster = self.clusters[track['cluster']]
+		artist_id = track["artist_id"]
+		if not track['cluster'] in self.cluster_tags:
+			self.cluster_tags[track['cluster']] = { }
+		for _tag in self.tag_data.artist_tags[track['artist_id']]:
+			if _tag != 'seen live':
+				clean_tag = _tag.lower().replace("-", " ")
+				if not clean_tag in self.cluster_tags[track['cluster']]:
+					self.cluster_tags[track['cluster']][clean_tag] = 1
+				else:
+					self.cluster_tags[track['cluster']][clean_tag] += 1
 
 	def add_cluster_to_artists(self, number):
 		cluster = self.clusters[number]
@@ -110,6 +130,8 @@ class RecordingsClusters:
 		for _n in sorted(list(self.clusters.keys())):
 			print("\n", "-------\n")
 			print(_n, "\n")
+			print(sorted(self.cluster_tags[_n], key=self.cluster_tags[_n].get, reverse=True)[:3])
+			print(self.cluster_tags[_n])
 			[ print(_name, self.clusters[_n][_name]) for _name in self.clusters[_n] ]
 
 	def print_artists(self):

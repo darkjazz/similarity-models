@@ -4,7 +4,7 @@ from bipartite_clusters import BipartiteGraph
 
 b = BipartiteGraph()
 b.make_clusters('mfcc')
-b.calculate_filter(type='heat-prob')
+b.calculate_filter(type='max-degree')
 p = Plotter(b.clusters)
 # for row in b.similarity_matrix:
 #     print([ round(_n, 4) for _n in row ])

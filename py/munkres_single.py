@@ -37,9 +37,6 @@ class WeightMatcher:
 			left = len(self.shrink) * len(self.ids) * np.mean(times) / 60.0
 			print(_id, self.artists[_id]["name"], round(left, 2), " minutes left")
 
-	def find_outlier(self):
-		self.sums
-
 	def calculate_time_left(self, interval):
 		total = len(self.ids) * (len(self.ids) - 1)
 		left = len(self.shrink) * len(self.ids)
@@ -58,20 +55,29 @@ class WeightMatcher:
 		self.data.write_db(self.artists, self.sums)
 
 	def plot(self, feature):
-		max_dist = 0
 		size = len(self.ids)
-		matrix = np.zeros((size, size))
+		self.matrix = np.zeros((size, size))
 		for _sum in self.sums:
 			x = self.ids.index(_sum['_id'])
 			y = self.ids.index(_sum['_od'])
-			matrix[x, y] = _sum['sums'][feature]
-			matrix[y, x] = _sum['sums'][feature]
-			if feature == 'mfcc':
-				if _sum['sums'][feature] > max_dist:
-					max_dist = _sum['sums'][feature]
-					print(max_dist, self.ids[x], self.ids[y])
+			self.matrix[x, y] = _sum['sums'][feature]
+			self.matrix[y, x] = _sum['sums'][feature]
+			# if feature == 'mfcc':
+			# 	if _sum['sums'][feature] > max_dist:
+			# 		max_dist = _sum['sums'][feature]
+			# 		print(max_dist, self.ids[x], self.ids[y])
+		self.find_outlier(self.matrix)
 		p = Plotter(RecordingsClusters())
-		p.plot_similarities(matrix)
+		p.plot_similarities(self.matrix)
+
+	def find_outlier(self, matrix):
+		distances = []
+		for i, row in enumerate(matrix):
+			_sum = np.sum(row)
+			_id = self.ids[i]
+			distances.append({ 'id': _id, 'sum': _sum })
+		[ print(self.artists[_a['id']]['name'], _a['sum']) for _a in sorted(distances, key=lambda a: a['sum'], reverse=True)[:10]]
+
 
 if __name__ == "__main__":
 	a = time.time()
@@ -79,8 +85,8 @@ if __name__ == "__main__":
 	w.get_artists()
 	w.iterate()
 	w.plot('mfcc')
-	w.plot('rhythm')
-	w.plot('chords')
+	# w.plot('rhythm')
+	# w.plot('chords')
 	# w.save()
 	b = time.time()
 	print(b - a)

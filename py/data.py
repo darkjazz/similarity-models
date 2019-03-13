@@ -62,7 +62,10 @@ class ArtistData:
 		if not doc is None:
 			recordings = list(doc["recordings"].values())
 			recordings = self.select(recordings, feature)
-			features = np.array([ r[feature] for r in recordings  ])
+			if feature == 'mfcc':
+				features = np.array([ r[feature][:5] for r in recordings  ])
+			else:
+				features = np.array([ r[feature] for r in recordings  ])
 			doc["features"] = features
 			doc["recordings"] = recordings
 		return doc
@@ -249,6 +252,11 @@ class TagData:
 		with open("../data/ab_subset.json") as js:
 			self.ids = json.load(js)
 			js.close()
+
+	def get_artist_tags(self):
+		self.artist_tags = { }
+		for row in self.db.view("views/tags_by_id"):
+			self.artist_tags[row.key] = row.value
 
 	def get_tags(self):
 		for _id in self.ids:

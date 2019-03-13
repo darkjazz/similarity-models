@@ -8,7 +8,7 @@ class Plotter:
         self.track_clusters = clusters
 
     def plot_clusters(self):
-        self.clusterer = clusters.clusterer
+        self.clusterer = self.track_clusters.clusterer
         tsne = TSNE(n_components=2, verbose=1, perplexity=10, n_iter=5000)
         emb = tsne.fit_transform(self.track_clusters.features)
         color_palette = sb.color_palette('Paired', max(self.clusterer.labels_) + 1)
@@ -17,7 +17,7 @@ class Plotter:
         pl.show()
 
     def plot_exemplars(self):
-        self.clusterer = clusters.clusterer
+        self.clusterer = self.track_clusters.clusterer
         exemplars = [ ]
         exemplar_labels = [ ]
         for i, _array in enumerate(self.clusterer.exemplars_):
@@ -33,11 +33,24 @@ class Plotter:
         pl.show()
 
     def plot_similarities(self, matrix):
-        print(matrix)
         tsne = TSNE(n_components=2, verbose=1, metric='precomputed')
         emb = tsne.fit_transform(matrix)
+        print(np.shape(emb))
         pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)
         pl.show()
+        for i, txt in enumerate(n):
+            ax.annotate(txt, (z[i], y[i]))
+
+    def plot_similarities_labeled(self, matrix, labels):
+        tsne = TSNE(n_components=2, verbose=1, metric='precomputed')
+        emb = tsne.fit_transform(matrix)
+        print(np.shape(emb))
+        pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)
+        pl.show()
+        x = emb.T[0]
+        y = emb.T[1]
+        for i, txt in enumerate(labels):
+            pl.annotate(txt, (x[i], y[i]))
 
     def plot_spanning_tree(self):
         self.clusterer.minimum_spanning_tree_.plot(edge_cmap='viridis',
