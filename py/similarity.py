@@ -5,7 +5,7 @@ class Similarity:
         self.clusters = clusters
 
     def get_cluster_degree(self, cluster):
-        return sum(list(self.clusters[cluster].values()))
+        return len(list(self.clusters[cluster].keys()))
 
     def get_collaborative(self, objects, degree):
         for _object in objects:
@@ -20,17 +20,17 @@ class Similarity:
             _object['similarity'] = 1.0 / float(max(_object['degree'], degree)) * weighted
         return objects
 
-    def get_heat_prob(self, objects, object_degrees, degree, l=1.0):
+    def get_heat_prob(self, objects, degree, l=1.0):
         for _object in objects:
             weighted = 0
             for _cluster in _object['common_clusters']:
                 weighted += float(_object['ranking']) / float(self.get_cluster_degree(_cluster))
-            _object['similarity'] = 1.0 / (degree**(1.0-l)) * (_object['degree']**l) * weighted
+            _object['similarity'] = 1.0 / (degree**(1.0-l) * _object['degree']**l) * weighted
         return objects
 
 class ArtistSimilarity(Similarity):
-    def __init__(self, artists, clusters, limit=LIMIT):
-        super().__init__(clusters, limit)
+    def __init__(self, artists, clusters):
+        super().__init__(clusters)
         self.artists = artists
 
     def get_artists(self, name):
@@ -47,13 +47,11 @@ class ArtistSimilarity(Similarity):
         return list(linked_artists.values())
 
     def get_artist_degree(self, name):
-        # return sum([ (1.0 / _c['weight']) for _c in self.artists[name] ])
         return sum([ 1.0 for _c in self.artists[name] ])
 
-
 class TagSimilarity(Similarity):
-    def __init__(self, cluster_tags, clusters, limit=LIMIT):
-        super().__init__(clusters, limit)
+    def __init__(self, cluster_tags, clusters):
+        super().__init__(clusters)
         self.cluster_tags = cluster_tags
 
     def get_tag_degree(self, name):

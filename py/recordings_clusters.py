@@ -125,6 +125,8 @@ class RecordingsClusters:
 		cluster_data = ClusterData()
 		cluster_data.get_clusters(id)
 		self.tracks = cluster_data.tracks
+		self.tag_data.get_artist_tags()
+		self.collect_artists()
 
 	def print_clusters(self):
 		for _n in sorted(list(self.clusters.keys())):
