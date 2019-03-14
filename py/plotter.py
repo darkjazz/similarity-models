@@ -38,19 +38,17 @@ class Plotter:
         print(np.shape(emb))
         pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)
         pl.show()
-        for i, txt in enumerate(n):
-            ax.annotate(txt, (z[i], y[i]))
 
     def plot_similarities_labeled(self, matrix, labels):
         tsne = TSNE(n_components=2, verbose=1, metric='precomputed')
         emb = tsne.fit_transform(matrix)
         print(np.shape(emb))
         pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)
-        pl.show()
         x = emb.T[0]
         y = emb.T[1]
         for i, txt in enumerate(labels):
-            pl.annotate(txt, (x[i], y[i]))
+            pl.text(x[i], y[i], txt, fontsize=8)
+        pl.show()
 
     def plot_spanning_tree(self):
         self.clusterer.minimum_spanning_tree_.plot(edge_cmap='viridis',

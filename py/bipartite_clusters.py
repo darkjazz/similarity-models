@@ -1,8 +1,8 @@
 from recordings_clusters import RecordingsClusters
-from filter import ArtistFilter, TagFilter
+from similarity import ArtistSimilarity, TagSimilarity
 import numpy as np
 
-class BipartiteGraph:
+class BipartiteClusters:
     def __init__(self):
         self.rec_clusters = RecordingsClusters()
 
@@ -12,7 +12,7 @@ class BipartiteGraph:
     def assign_existing_clusters(self, rec_clusters):
         self.rec_clusters = rec_clusters
 
-    def calculate_filter(self, type='max-degree', lmb=1.0):
+    def calculate_artist_similarity(self, type='max-degree', lmb=1.0):
         self.filter = ArtistFilter(self.rec_clusters.artists, self.rec_clusters.clusters)
         self.output = ""
         self.similarity_matrix = np.zeros((len(self.rec_clusters.artists), len(self.rec_clusters.artists)))
@@ -20,29 +20,25 @@ class BipartiteGraph:
         for _name in self.rec_clusters.artists:
             linked_artists = self.filter.get_artists(_name)
             degree = self.filter.get_artist_degree(_name)
-            _type = 'ranking'
             if type == 'collab':
-                _type = 'collab'
                 similar =  self.filter.get_collaborative(linked_artists, degree)
             elif type == 'max-degree':
-                _type = 'max-degree'
                 similar = self.filter.get_max_degree(linked_artists, degree)
             elif type == 'heat-prob':
-                _type = 'heat-prob'
                 similar = self.filter.get_heat_prob(linked_artists, degree, lmb)
             else:
                 similar = self.filter.get_ranking(linked_artists)
             x = self.names.index(_name)
             for _a in similar:
                 y = self.names.index(_a['name'])
-                self.similarity_matrix[x, y] = _a[_type]
-                self.similarity_matrix[y, x] = _a[_type]
+                self.similarity_matrix[x, y] = _a['similarity']
+                self.similarity_matrix[y, x] = _a['similarity']
         # self.save_output()
 
     def calculate_tag_filter(self, type='max-degree', lmb=1.0):
         self.filter = TagFilter(self.rec_clusters.cluster_tags, self.rec_clusters.clusters)
-        self.similarity_matrix = np.zeros((len(self.rec_clusters.artists), len(self.rec_clusters.artists)))
         self.tag_names = list(self.get_unique_tag_names())
+        self.similarity_matrix = np.zeros((len(self.tag_names), len(self.tag_names)))
         for _name in self.tag_names:
             linked_tags = self.filter.get_tags(_name)
             degree = self.filter.get_tag_degree(_name)
@@ -67,7 +63,7 @@ class BipartiteGraph:
     def get_unique_tag_names(self):
         all_tags = [ ]
         for _n in self.rec_clusters.cluster_tags:
-            [ all_tags.append(_tag) for _tag in self.rec_clusters.cluster_tags ]
+            [ all_tags.append(_tag) for _tag in self.rec_clusters.cluster_tags[_n] ]
         return set(all_tags)
 
     def print_artist(self, name, similar):
