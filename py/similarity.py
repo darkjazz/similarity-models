@@ -47,7 +47,7 @@ class ArtistSimilarity(Similarity):
         return list(linked_artists.values())
 
     def get_artist_degree(self, name):
-        return sum([ 1.0 for _c in self.artists[name] ])
+        return sum([ _c['weight'] for _c in self.artists[name] ])
 
 class TagSimilarity(Similarity):
     def __init__(self, cluster_tags, clusters):

@@ -35,7 +35,7 @@ class WeightMatcher:
 			if not times:
 				times = [0]
 			left = len(self.shrink) * len(self.ids) * np.mean(times) / 60.0
-			print(_id, self.artists[_id]["name"], round(left, 2), " minutes left")
+			# print(_id, self.artists[_id]["name"], round(left, 2), " minutes left")
 
 	def calculate_time_left(self, interval):
 		total = len(self.ids) * (len(self.ids) - 1)
@@ -45,11 +45,11 @@ class WeightMatcher:
 		return time_left
 
 	def assign_sum_pairwise(self, a, b):
-		# max_length = min(len(a), len(b))
-		distance_array = pairwise_distances(a, b)
-		# indexes = self.munkres.compute(distance_array.copy())
-		# return np.sqrt(np.sum([ distance_array[x][y] for x, y in indexes ]))
-		return np.mean(distance_array)
+		max_length = min(len(a), len(b))
+		distance_array = pairwise_distances(a[:max_length], b[:max_length])
+		indexes = self.munkres.compute(distance_array.copy())
+		return np.sqrt(np.sum([ distance_array[x][y] for x, y in indexes ]))
+		# return np.mean(distance_array)
 
 	def save(self):
 		self.data.write_db(self.artists, self.sums)
@@ -84,9 +84,9 @@ if __name__ == "__main__":
 	w = WeightMatcher()
 	w.get_artists()
 	w.iterate()
-	w.plot('mfcc')
+	# w.plot('mfcc')
 	# w.plot('rhythm')
 	# w.plot('chords')
 	# w.save()
 	b = time.time()
-	print(b - a)
+	print("total time:", b - a)

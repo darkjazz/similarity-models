@@ -15,6 +15,7 @@ class ArtistData:
 		self.sdb = srv['ab_11_plus']
 		self.tdb = srv['ab_sums']
 		self.cdb = srv['track_clusters']
+		self.gdb = srv["graph_match"]
 
 	def get_artists(self, limit=0, use_subset=False):
 		self.artists = { }
@@ -62,10 +63,7 @@ class ArtistData:
 		if not doc is None:
 			recordings = list(doc["recordings"].values())
 			recordings = self.select(recordings, feature)
-			if feature == 'mfcc':
-				features = np.array([ r[feature][:5] for r in recordings  ])
-			else:
-				features = np.array([ r[feature] for r in recordings  ])
+			features = np.array([ r[feature] for r in recordings  ])
 			doc["features"] = features
 			doc["recordings"] = recordings
 		return doc

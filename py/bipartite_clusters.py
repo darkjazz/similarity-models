@@ -6,8 +6,8 @@ class BipartiteClusters:
     def __init__(self):
         self.rec_clusters = RecordingsClusters()
 
-    def make_clusters(self, feature='mfcc'):
-        self.rec_clusters.run(feature)
+    def make_clusters(self, feature='mfcc', use_soft_clustering=True):
+        self.rec_clusters.run(feature, use_soft_clustering=use_soft_clustering)
 
     def assign_existing_clusters(self, clustering_id):
         self.rec_clusters.load_clusters(clustering_id)
