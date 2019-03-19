@@ -33,23 +33,23 @@ class ArtistSimilarity(Similarity):
         super().__init__(clusters)
         self.artists = artists
 
-    def get_artists(self, name, include_self):
+    def get_artists(self, id, include_self):
         linked_artists = { }
-        for _num in [ _n for _n in self.clusters if name in self.clusters[_n] ]:
+        for _num in [ _n for _n in self.clusters if id in self.clusters[_n] ]:
             _cluster = self.clusters[_num]
-            for _name in _cluster:
-                if not _name in linked_artists:
-                    linked_artists[_name] = { 'name': _name, 'ranking': 0, 'common_clusters': [ ] }
-                linked_artists[_name]['ranking'] += _cluster[_name]
-                linked_artists[_name]['common_clusters'].append(_num)
-        for _name in linked_artists:
-            linked_artists[_name]['degree'] = self.get_artist_degree(_name)
+            for _id in _cluster:
+                if not _id in linked_artists:
+                    linked_artists[_id] = { 'id': _id, 'ranking': 0, 'common_clusters': [ ] }
+                linked_artists[_id]['ranking'] += _cluster[_id]
+                linked_artists[_id]['common_clusters'].append(_num)
+        for _id in linked_artists:
+            linked_artists[_id]['degree'] = self.get_artist_degree(_id)
         if not include_self:
-            del linked_artists[name]
+            del linked_artists[id]
         return list(linked_artists.values())
 
-    def get_artist_degree(self, name):
-        return sum([ _c['weight'] for _c in self.artists[name] ])
+    def get_artist_degree(self, id):
+        return sum([ _c['weight'] for _c in self.artists[id] ])
 
 class TagSimilarity(Similarity):
     def __init__(self, cluster_tags, clusters):

@@ -16,11 +16,11 @@ class BipartiteClusters:
         self.similarity = ArtistSimilarity(self.rec_clusters.artists, self.rec_clusters.clusters)
         self.output = ""
         self.similarity_matrix = np.zeros((len(self.rec_clusters.artists), len(self.rec_clusters.artists)))
-        self.names = list(self.rec_clusters.artists.keys())
+        self.ids = list(self.rec_clusters.artists.keys())
         self.artist_similarities = { }
-        for _name in self.rec_clusters.artists:
-            linked_artists = self.similarity.get_artists(_name, include_self)
-            degree = self.similarity.get_artist_degree(_name)
+        for _id in self.rec_clusters.artists:
+            linked_artists = self.similarity.get_artists(_id, include_self)
+            degree = self.similarity.get_artist_degree(_id)
             if type == 'collab':
                 similar =  self.similarity.get_collaborative(linked_artists, degree)
             elif type == 'max-degree':
@@ -30,10 +30,10 @@ class BipartiteClusters:
             else:
                 similar = linked_artists
             if max_similarities > 0:
-                self.artist_similarities[_name] = sorted(similar, key=lambda x: x["similarity"], reverse=True)[:max_similarities]
-            x = self.names.index(_name)
+                self.artist_similarities[_id] = sorted(similar, key=lambda x: x["similarity"], reverse=True)[:max_similarities]
+            x = self.ids.index(_id)
             for _a in similar:
-                y = self.names.index(_a['name'])
+                y = self.ids.index(_a['id'])
                 self.similarity_matrix[x, y] = _a['similarity']
                 self.similarity_matrix[y, x] = _a['similarity']
         # self.save_output()
@@ -70,24 +70,16 @@ class BipartiteClusters:
         return set(all_tags)
 
     def print_artists(self):
-        for _name in self.artist_similarities:
-            similar = self.artist_similarities[_name]
-            # self.output += "\n-----\n\n" + name + "\n"
-            print("\n-----\n\n", _name)
-            # [ print(_artist["name"], _artist["ranking"], round(_artist["heat-prob"], 4)) for _artist in similar if _artist["name"] != name ]
-            [ print(_artist["name"], _artist["ranking"], round(_artist["similarity"], 4)) for _artist in similar ]
-            # for _a in [ _artist for _artist in similar if _artist["name"] != name ]:
-            #     self.output += _a["name"] + " " + str(_a["ranking"]) + " " + str(round(_a["heat-prob"], 4)) + "\n"
+        for _id in self.artist_similarities:
+            similar = self.artist_similarities[_id]
+            print("\n-----\n\n", self.rec_clusters.names[_id], _id)
+            [ print(self.rec_clusters.names[_artist["id"]], _artist["ranking"], round(_artist["similarity"], 4)) for _artist in similar ]
 
     def print_tags(self):
         for _name in self.tag_similarities:
             similar = self.tag_similarities[_name]
-            # self.output += "\n-----\n\n" + name + "\n"
             print("\n-----\n\n", _name)
-            # [ print(_artist["name"], _artist["ranking"], round(_artist["heat-prob"], 4)) for _artist in similar if _artist["name"] != name ]
             [ print(_tag["name"], _tag["ranking"], round(_tag["similarity"], 4)) for _tag in similar ]
-            # for _a in [ _artist for _artist in similar if _artist["name"] != name ]:
-            #     self.output += _a["name"] + " " + str(_a["ranking"]) + " " + str(round(_a["heat-prob"], 4)) + "\n"
 
     def save_output(self):
         with open('../data/heat-prob.data', 'w') as wf:

@@ -32,6 +32,12 @@ class ArtistData:
 				self.artists[_id] = self.select_recordings(doc)
 		return self.artists
 
+	def get_artist_name(self, id):
+		name = ""
+		for _row in self.sdb.view('views/name_by_id', key=id):
+			name = _row.value
+		return name
+
 	def select_recordings(self, doc):
 		if not doc is None:
 			recordings = list(doc["recordings"].values())

@@ -101,25 +101,31 @@ class RecordingsClusters:
 		self.clusters = { }
 		self.artists = { }
 		self.cluster_tags = { }
+		self.names = { }
 		[ self.add_artist_to_cluster(t) for t in self.tracks ]
 		[ self.add_cluster_to_artists(n) for n in self.clusters ]
 		[ self.add_tags_to_cluster(t) for t in self.tracks ]
 
-# SHOULD BE BY ID, NOT NAME
 	def add_artist_to_cluster(self, track):
 		if not track['cluster'] in self.clusters:
 			self.clusters[track['cluster']] = { }
-		if not track['artist'] in self.clusters[track['cluster']]:
+		if not track['artist_id'] in self.clusters[track['cluster']]:
 			if "weight" in track:
-				self.clusters[track['cluster']][track['artist']] = track["weight"]
+				self.clusters[track['cluster']][track['artist_id']] = track["weight"]
 			else:
-				self.clusters[track['cluster']][track['artist']] = 1
+				self.clusters[track['cluster']][track['artist_id']] = 1
 		else:
 			if "weight" in track:
-				self.clusters[track['cluster']][track['artist']] += track["weight"]
+				self.clusters[track['cluster']][track['artist_id']] += track["weight"]
 			else:
-				self.clusters[track['cluster']][track['artist']] += 1
-		self.add_tags_to_cluster(track)
+				self.clusters[track['cluster']][track['artist_id']] += 1
+		if not track['artist_id'] in self.names:
+			self.add_artist_name(track['artist_id'])
+
+	def add_artist_name(self, id):
+		name = self.data.get_artist_name(id)
+		if name:
+			self.names[id] = name
 
 	def add_tags_to_cluster(self, track):
 		cluster = self.clusters[track['cluster']]
@@ -142,10 +148,10 @@ class RecordingsClusters:
 
 	def add_cluster_to_artists(self, number):
 		cluster = self.clusters[number]
-		for _name in cluster:
-			if not _name in self.artists:
-				self.artists[_name] = [ ]
-			self.artists[_name].append({ 'cluster': number, 'weight': cluster[_name] })
+		for _id in cluster:
+			if not _id in self.artists:
+				self.artists[_id] = [ ]
+			self.artists[_id].append({ 'cluster': number, 'weight': cluster[_id] })
 
 	def load_clusters(self, id):
 		cluster_data = ClusterData()
@@ -160,7 +166,7 @@ class RecordingsClusters:
 			print(_n, "\n")
 			print(sorted(self.cluster_tags[_n], key=self.cluster_tags[_n].get, reverse=True)[:3])
 			print(self.cluster_tags[_n])
-			[ print(_name, self.clusters[_n][_name]) for _name in self.clusters[_n] ]
+			[ print(self.names[_id], self.clusters[_n][_id]) for _id in self.clusters[_n] ]
 
 	# def print_track_clusters(self):
 	# 	if self.use_soft_clustering:
@@ -173,9 +179,9 @@ class RecordingsClusters:
 	#             self.tracks[i]["weight"] = self.clusterer.probabilities_[i]
 
 	def print_artists(self):
-		for _name in self.artists:
-			print(_name)
-			artist = self.artists[_name]
+		for _id in self.artists:
+			print(_id, self.names[_id])
+			artist = self.artists[_id]
 			for cluster in artist:
 				print(cluster)
 
