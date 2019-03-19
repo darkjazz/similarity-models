@@ -12,14 +12,14 @@ class BipartiteClusters:
     def assign_existing_clusters(self, clustering_id):
         self.rec_clusters.load_clusters(clustering_id)
 
-    def calculate_artist_similarity(self, type='max-degree', lmb=1.0, max_similarities = 0):
+    def calculate_artist_similarity(self, type='max-degree', lmb=1.0, max_similarities = 0, include_self=True):
         self.similarity = ArtistSimilarity(self.rec_clusters.artists, self.rec_clusters.clusters)
         self.output = ""
         self.similarity_matrix = np.zeros((len(self.rec_clusters.artists), len(self.rec_clusters.artists)))
         self.names = list(self.rec_clusters.artists.keys())
         self.artist_similarities = { }
         for _name in self.rec_clusters.artists:
-            linked_artists = self.similarity.get_artists(_name)
+            linked_artists = self.similarity.get_artists(_name, include_self)
             degree = self.similarity.get_artist_degree(_name)
             if type == 'collab':
                 similar =  self.similarity.get_collaborative(linked_artists, degree)

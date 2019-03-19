@@ -80,11 +80,15 @@ class RecordingsClusters:
 
 	def save_tracks(self):
 		print("saving tracks ..")
+		clustering_id = self.timestamp + "-" + self.feature
+		if not self.use_soft_clustering:
+			clustering_id += "-H"
 		for _track in self.tracks:
 			savetrack = {
 				"_id": str(uuid.uuid4()),
-				"clustering": self.timestamp + "-" + self.feature,
+				"clustering": clustering_id,
 				"cluster": str(_track["cluster"]),
+				"weight": _track["weight"],
 				"title": _track["title"],
 				"artist": _track["artist"],
 				"artist_id": _track["artist_id"]
@@ -101,13 +105,20 @@ class RecordingsClusters:
 		[ self.add_cluster_to_artists(n) for n in self.clusters ]
 		[ self.add_tags_to_cluster(t) for t in self.tracks ]
 
+# SHOULD BE BY ID, NOT NAME
 	def add_artist_to_cluster(self, track):
 		if not track['cluster'] in self.clusters:
 			self.clusters[track['cluster']] = { }
 		if not track['artist'] in self.clusters[track['cluster']]:
-			self.clusters[track['cluster']][track['artist']] = track["weight"]
+			if "weight" in track:
+				self.clusters[track['cluster']][track['artist']] = track["weight"]
+			else:
+				self.clusters[track['cluster']][track['artist']] = 1
 		else:
-			self.clusters[track['cluster']][track['artist']] += track["weight"]
+			if "weight" in track:
+				self.clusters[track['cluster']][track['artist']] += track["weight"]
+			else:
+				self.clusters[track['cluster']][track['artist']] += 1
 		self.add_tags_to_cluster(track)
 
 	def add_tags_to_cluster(self, track):
@@ -119,9 +130,15 @@ class RecordingsClusters:
 			if _tag != 'seen live':
 				clean_tag = _tag.lower().replace("-", " ")
 				if not clean_tag in self.cluster_tags[track['cluster']]:
-					self.cluster_tags[track['cluster']][clean_tag] = track["weight"]
+					if "weight" in track:
+						self.cluster_tags[track['cluster']][clean_tag] = track["weight"]
+					else:
+						self.cluster_tags[track['cluster']][clean_tag] = 1
 				else:
-					self.cluster_tags[track['cluster']][clean_tag] += track["weight"]
+					if "weight" in track:
+						self.cluster_tags[track['cluster']][clean_tag] += track["weight"]
+					else:
+						self.cluster_tags[track['cluster']][clean_tag] += 1
 
 	def add_cluster_to_artists(self, number):
 		cluster = self.clusters[number]

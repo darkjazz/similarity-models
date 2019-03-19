@@ -33,7 +33,7 @@ class ArtistSimilarity(Similarity):
         super().__init__(clusters)
         self.artists = artists
 
-    def get_artists(self, name):
+    def get_artists(self, name, include_self):
         linked_artists = { }
         for _num in [ _n for _n in self.clusters if name in self.clusters[_n] ]:
             _cluster = self.clusters[_num]
@@ -44,6 +44,8 @@ class ArtistSimilarity(Similarity):
                 linked_artists[_name]['common_clusters'].append(_num)
         for _name in linked_artists:
             linked_artists[_name]['degree'] = self.get_artist_degree(_name)
+        if not include_self:
+            del linked_artists[name]
         return list(linked_artists.values())
 
     def get_artist_degree(self, name):
