@@ -7,6 +7,8 @@ import time, uuid
 FEATURE = 'mfcc'
 MIN_CLUSTER_SIZE = 11
 
+# TRY UMAP FOR CLUSTERING!!
+
 class RecordingsClusters:
 	def __init__(self, use_tags):
 		self.data = ArtistData()
@@ -162,14 +164,18 @@ class RecordingsClusters:
 		if self.use_tags:
 			self.tag_data.get_artist_tags()
 		self.collect_artists()
+		self.use_soft_clustering = id[-1] != "H"
 
 	def print_clusters(self):
 		for _n in sorted(list(self.clusters.keys())):
-			print("\n", "-------\n")
-			print(_n, "\n")
-			print(sorted(self.cluster_tags[_n], key=self.cluster_tags[_n].get, reverse=True)[:3])
-			print(self.cluster_tags[_n])
-			[ print(self.names[_id], self.clusters[_n][_id]) for _id in self.clusters[_n] ]
+			self.print_cluster(_n)
+
+	def print_cluster(self, _n):
+		print("\n", "-------\n")
+		print(_n, "\n")
+		print(sorted(self.cluster_tags[_n], key=self.cluster_tags[_n].get, reverse=True)[:3])
+		print(self.cluster_tags[_n])
+		[ print(self.names[_id], self.clusters[_n][_id]) for _id in self.clusters[_n] ]
 
 	# def print_track_clusters(self):
 	# 	if self.use_soft_clustering:
@@ -188,6 +194,9 @@ class RecordingsClusters:
 			for cluster in artist:
 				print(cluster)
 
+	def print_artist_tracks(self, id):
+		[ print(_t) for _t in self.tracks if _t['artist_id'] == id ]
+
 	def print_cluster_stats(self):
 		sizes = [ len(self.clusters[c]) for c in self.clusters ]
 		num = len(self.clusters)
@@ -196,6 +205,11 @@ class RecordingsClusters:
 		mean = np.mean(sizes)
 		median = np.median(sizes)
 		print("num %d | max %d | min %d | mean %d | median %d" % (num, max, min, mean, median))
+		print("%d tracks by %d artists" % (len(self.tracks), len(self.artists)))
+		if not self.use_soft_clustering:
+			noise = sum([ 1 for _n in self.tracks if int(_n["cluster"]) == -1 ])
+			print("%d tracks out of %d classified as noise" % (noise, len(self.tracks)))
+
 
 if __name__ == "__main__":
 	c = RecordingsClusters()
