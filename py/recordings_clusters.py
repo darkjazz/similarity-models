@@ -8,11 +8,12 @@ FEATURE = 'mfcc'
 MIN_CLUSTER_SIZE = 11
 
 class RecordingsClusters:
-	def __init__(self):
+	def __init__(self, use_tags):
 		self.data = ArtistData()
 		self.tag_data = TagData()
 		self.show_clusterings()
 		self.use_soft_clustering = True
+		self.use_tags = use_tags
 
 	def show_clusterings(self):
 		for row in self.data.cdb.view("views/clusterings", group=True):
@@ -104,7 +105,8 @@ class RecordingsClusters:
 		self.names = { }
 		[ self.add_artist_to_cluster(t) for t in self.tracks ]
 		[ self.add_cluster_to_artists(n) for n in self.clusters ]
-		[ self.add_tags_to_cluster(t) for t in self.tracks ]
+		if self.use_tags:
+			[ self.add_tags_to_cluster(t) for t in self.tracks ]
 
 	def add_artist_to_cluster(self, track):
 		if not track['cluster'] in self.clusters:
@@ -157,7 +159,8 @@ class RecordingsClusters:
 		cluster_data = ClusterData()
 		cluster_data.get_clusters(id)
 		self.tracks = cluster_data.tracks
-		self.tag_data.get_artist_tags()
+		if self.use_tags:
+			self.tag_data.get_artist_tags()
 		self.collect_artists()
 
 	def print_clusters(self):

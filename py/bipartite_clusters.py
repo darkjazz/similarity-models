@@ -1,10 +1,11 @@
 from recordings_clusters import RecordingsClusters
 from similarity import ArtistSimilarity, TagSimilarity
 import numpy as np
+import progressbar as bar
 
 class BipartiteClusters:
-    def __init__(self):
-        self.rec_clusters = RecordingsClusters()
+    def __init__(self, use_tags=True):
+        self.rec_clusters = RecordingsClusters(use_tags)
 
     def make_clusters(self, feature='mfcc', use_soft_clustering=True):
         self.rec_clusters.run(feature, use_soft_clustering=use_soft_clustering)
@@ -13,11 +14,14 @@ class BipartiteClusters:
         self.rec_clusters.load_clusters(clustering_id)
 
     def calculate_artist_similarity(self, type='max-degree', lmb=1.0, max_similarities = 0, include_self=True):
+        print("calculating %s similarity" % type)
         self.similarity = ArtistSimilarity(self.rec_clusters.artists, self.rec_clusters.clusters)
         self.output = ""
         self.similarity_matrix = np.zeros((len(self.rec_clusters.artists), len(self.rec_clusters.artists)))
         self.ids = list(self.rec_clusters.artists.keys())
         self.artist_similarities = { }
+        b = bar.ProgressBar(max_value=len(self.rec_clusters.artists))
+        c = 0
         for _id in self.rec_clusters.artists:
             linked_artists = self.similarity.get_artists(_id, include_self)
             degree = self.similarity.get_artist_degree(_id)
@@ -31,12 +35,16 @@ class BipartiteClusters:
                 similar = linked_artists
             if max_similarities > 0:
                 self.artist_similarities[_id] = sorted(similar, key=lambda x: x["similarity"], reverse=True)[:max_similarities]
-            x = self.ids.index(_id)
-            for _a in similar:
-                y = self.ids.index(_a['id'])
-                self.similarity_matrix[x, y] = _a['similarity']
-                self.similarity_matrix[y, x] = _a['similarity']
+            c += 1
+            b.update(c)
+            # x = self.ids.index(_id)
+            # for _a in similar:
+            #     y = self.ids.index(_a['id'])
+            #     self.similarity_matrix[x, y] = _a['similarity']
+            #     self.similarity_matrix[y, x] = _a['similarity']
         # self.save_output()
+        b.finish()
+        print('\n')
 
     def calculate_tag_similarity(self, type='max-degree', lmb=1.0, max_similarities = 0):
         self.similarity = TagSimilarity(self.rec_clusters.cluster_tags, self.rec_clusters.clusters)
