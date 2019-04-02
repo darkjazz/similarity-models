@@ -80,6 +80,12 @@ class CouchBuilder:
 				count += 1
 				print(_id, count)
 
+	def calculate_combined(self):
+		for _id in self.tdb:
+			doc = self.tdb.get(_id)
+			
+
+
 	def export_ids(self):
 		id_str = ""
 		for _id in self.tdb:

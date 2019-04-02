@@ -63,6 +63,34 @@ class BipartiteClusters:
                 self.similarity_matrix[x, y] = _a['similarity']
                 self.similarity_matrix[y, x] = _a['similarity']
 
+    def compare_artists(self, source_id, target_id, type, lmb):
+        similarity = ArtistSimilarity(self.rec_clusters.artists, self.rec_clusters.clusters)
+        linked_artist = similarity.compare(source_id, target_id)
+        degree = self.similarity.get_artist_degree(source_id)
+        if type == 'collab':
+            similarity =  self.similarity.get_collaborative(linked_artist, degree)
+        elif type == 'max-degree':
+            similarity = self.similarity.get_max_degree(linked_artist, degree)
+        elif type == 'heat-prob':
+            similarity = self.similarity.get_heat_prob(linked_artist, degree, lmb)
+        else:
+            linked_artist[0]['similarity'] = linked_artist[0]['ranking']
+        return similarity
+
+    def compare_tags(self, source_tag, target_tag, type, lmb):
+        similarity = TagSimilarity(self.rec_clusters.artists, self.rec_clusters.clusters)
+        linked_tags = similarity.compare(source_tag, target_tag)
+        degree = self.similarity.get_tag_degree(source_tag)
+        if type == 'collab':
+            similarity =  self.similarity.get_collaborative(linked_tags, degree)
+        elif type == 'max-degree':
+            similarity = self.similarity.get_max_degree(linked_tags, degree)
+        elif type == 'heat-prob':
+            similarity = self.similarity.get_heat_prob(linked_tags, degree, lmb)
+        else:
+            linked_tags[0]['similarity'] = linked_tags[0]['ranking']
+        return similarity
+
     def get_unique_tag_names(self):
         all_tags = [ ]
         for _n in self.rec_clusters.cluster_tags:
