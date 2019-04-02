@@ -3,6 +3,7 @@ import numpy as np
 import progressbar as pb
 import httplib2
 from urllib.parse import quote
+import time
 
 MAX_RECS = 23
 MAX_NEAREST = 13
@@ -248,9 +249,9 @@ class DbMerger:
 class TagData:
 	def __init__(self):
 		srv = couchdb.Server()
-		self.db = srv["ab_subset"]
+		self.db = srv["ab_11_plus"]
 		self.uri = SERVER_URI
-		self.load_subset()
+		# self.load_subset()
 
 	def load_subset(self):
 		with open("../data/ab_subset.json") as js:
@@ -262,9 +263,16 @@ class TagData:
 		for row in self.db.view("views/tags_by_id"):
 			self.artist_tags[row.key] = row.value
 
+	def get_name(self, id):
+		name = ""
+		for _row in self.db.view("views/name_by_id", key=id):
+			name = _row.value
+		return name
+
 	def get_tags(self):
 		for _id in self.ids:
-			uri = SERVER_URI + _id['id'] + '/' + quote(_id['value'])
+			name = self.get_name(_id)
+			uri = SERVER_URI + _id + '/' + quote(name)
 			re, co = httplib2.Http().request(uri)
 			if re.status == 200:
 				res = json.loads(co)
@@ -272,9 +280,24 @@ class TagData:
 					tags = [ ]
 					for _tag in res[:3]:
 						tags.append(_tag['name'])
-					doc = self.db.get(_id['key'])
+					doc = self.db.get(_id)
 					# print(doc)
 					doc['tags'] = tags
 					self.db.delete(doc)
 					del doc['_rev']
 					self.db.save(doc)
+					print(_id, tags)
+					time.sleep(1.1)
+
+class DbRebuilder:
+	def __init__(self, source, target):
+		srv = couchdb.Server()
+		self.source = srv[source]
+		self.target = srv[target]
+
+	def run(self):
+		for _id in self.source:
+			doc = self.source.get(_id)
+			del doc['_rev']
+			self.target.save(doc)
+			print(_id)
