@@ -24,13 +24,13 @@ class BipartiteClusters:
         b = bar.ProgressBar(max_value=len(self.rec_clusters.artists))
         c = 0
         for _id in self.rec_clusters.artists:
-            t = time.time()
+            # t = time.time()
             linked_artists = self.similarity.get_artists(_id, include_self)
-            print('get linked artists: %d seconds' % time.time() - t)
-            t = time.time()
+            # print('get linked artists: %.3f seconds' % round(time.time() - t, 3))
+            # t = time.time()
             degree = self.similarity.get_artist_degree(_id)
-            print('get artist degree: %d seconds' % time.time() - t)
-            t = time.time()
+            # print('get artist degree: %.3f seconds' % round(time.time() - t, 3))
+            # t = time.time()
             if type == 'collab':
                 similar =  self.similarity.get_collaborative(linked_artists, degree)
             elif type == 'max-degree':
@@ -39,7 +39,7 @@ class BipartiteClusters:
                 similar = self.similarity.get_heat_prob(linked_artists, degree, lmb)
             else:
                 similar = linked_artists
-            print('calculate similarity: %d seconds' % time.time() - t)
+            # print('calculate similarity: %.3f seconds' % round(time.time() - t, 3))
             if max_similarities > 0:
                 self.artist_similarities[_id] = sorted(similar, key=lambda x: x["similarity"], reverse=True)[:max_similarities]
             c += 1

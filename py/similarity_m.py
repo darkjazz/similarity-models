@@ -7,25 +7,25 @@ class Similarity:
     def get_cluster_degree(self, cluster):
         return len(list(self.clusters[cluster].keys()))
 
-    def get_collaborative(self, objects, degree, id, output):
+    def get_collaborative(self, objects, degree, id, num):
         for _object in objects:
             _object['similarity'] = float(_object['ranking']) / float(min(_object['degree'], degree))
-        output.put((id, objects))
+        return (id, sorted(objects, key=lambda x: x["similarity"], reverse=True)[:num])
 
-    def get_max_degree(self, objects, degree, id, output):
+    def get_max_degree(self, objects, degree, id, num):
         for _object in objects:
             weighted = 0
             for _cluster in _object['common_clusters']:
                 weighted += float(_object['ranking']) / float(self.get_cluster_degree(_cluster))
             _object['similarity'] = 1.0 / float(max(_object['degree'], degree)) * weighted
-        output.put((id, objects))
+        return (id, sorted(objects, key=lambda x: x["similarity"], reverse=True)[:num])
 
-    def get_heat_prob(self, objects, degree, l, id, output):
+    def get_heat_prob(self, objects, degree, l, id, num):
         for _object in objects:
             weighted_rank = (_object['ranking'] * len(_object['common_clusters']))
             weighted_rank /= sum ( float(self.get_cluster_degree(_c)) for _c in _object['common_clusters'] )
             _object['similarity'] = 1.0 / (degree**(1.0-l) * _object['degree']**l) * weighted_rank
-        output.put((id, objects))
+        return (id, sorted(objects, key=lambda x: x["similarity"], reverse=True)[:num])
 
 class ArtistSimilarity(Similarity):
     def __init__(self, artists, clusters):

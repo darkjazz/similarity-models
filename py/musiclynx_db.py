@@ -1,4 +1,4 @@
-from bipartite_clusters import BipartiteClusters
+from bipartite_clusters_m import BipartiteClusters
 import json
 from couchdb import Server
 import progressbar as bar
@@ -23,22 +23,18 @@ class MusicLynxDbBuilder:
         self.db = { }
         for _feature in self.clusterings:
             self.process_feature(_feature, similarity, lmb, num_similar)
-        # self.write_db(similarity)
 
     def process_feature(self, feature, similarity, lmb, num_similar):
         self.clusters = BipartiteClusters(False)
         self.clusters.assign_existing_clusters(self.clusterings[feature])
         self.clusters.rec_clusters.print_cluster_stats()
-        self.clusters.calculate_artist_similarity(similarity, lmb, num_similar, False)
+        results = self.clusters.calculate_artist_similarity(similarity, lmb, num_similar, False)
         print('saving artists ..')
-        b = bar.ProgressBar(max_value=len(self.clusters.artist_similarities))
+        b = bar.ProgressBar(max_value=len(results))
         c = 0
-        for _id in self.clusters.artist_similarities:
-            if not _id in self.db:
-                self.db[_id] = { }
-            _sim = self.clusters.artist_similarities[_id]
-            self.db[_id][feature] = [ { 'name': self.clusters.rec_clusters.names[_a['id']], 'id': _a['id'], 'div': _a['similarity'] } for _a in _sim ][:NUM_SAVED]
-            self.cdbs[feature].save({ '_id': _id, 'metric': similarity, 'similar': self.db[_id][feature] })
+        for _tup in results:
+            _id = _tup[0]
+            self.cdbs[feature].save({ '_id': _id, 'metric': similarity + '_' + str(lmb), 'similar': _tup[1] })
             c += 1
             b.update(c)
         b.finish()
