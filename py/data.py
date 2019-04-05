@@ -13,7 +13,7 @@ SERVER_URI = 'http://127.0.0.1:8080/lastfm/get_top_tags/'
 class ArtistData:
 	def __init__(self):
 		srv = couchdb.Server()
-		self.sdb = srv['ab_o11']
+		self.sdb = srv['ab_11_plus']
 		self.tdb = srv['ab_sums']
 		self.cdb = srv['track_clusters']
 		self.gdb = srv["graph_match"]

@@ -1,4 +1,5 @@
 from bipartite_clusters_m import BipartiteClusters
+from data import ArtistData
 import json
 from couchdb import Server
 import progressbar as bar
@@ -39,6 +40,18 @@ class MusicLynxDbBuilder:
             b.update(c)
         b.finish()
         print('\n')
+
+    def build_from_couch(self):
+        data = ArtistData()
+        ids = data.load_ids()
+        self.db = { }
+        for _id in ids:
+            self.db[_id] = { }
+            for _db_key in self.cdbs:
+                _doc = self.cdbs[_db_key].get(_id)
+                self.db[_id][_db_key] = _doc['similar'][:13]
+            print(_id)
+        self.write_db('max')
 
     def write_db(self, similarity):
         with open('../data/ab_db_%s.json' % similarity, 'w') as wj:
