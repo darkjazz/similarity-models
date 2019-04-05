@@ -12,10 +12,11 @@ MIN_CLUSTER_SIZE = 11
 class RecordingsClusters:
 	def __init__(self, use_tags):
 		self.data = ArtistData()
-		self.tag_data = TagData()
+		self.use_tags = use_tags
+		if use_tags:
+			self.tag_data = TagData()
 		self.show_clusterings()
 		self.use_soft_clustering = True
-		self.use_tags = use_tags
 
 	def show_clusterings(self):
 		for row in self.data.cdb.view("views/clusterings", group=True):

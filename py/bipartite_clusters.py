@@ -22,9 +22,22 @@ class BipartiteClusters:
         c = 0
         t = time.time()
         for _id in self.rec_clusters.artists:
+            # t = time.time()
             linked_artists = self.similarity.get_artists(_id, include_self)
+            # print('get linked artists: %.3f seconds' % round(time.time() - t, 3))
+            # t = time.time()
             degree = self.similarity.get_artist_degree(_id)
-            similar = self.calculate_similarity(linked_artists, degree, lmb, type)
+            # print('get artist degree: %.3f seconds' % round(time.time() - t, 3))
+            # t = time.time()
+            if type == 'collab':
+                similar =  self.similarity.get_collaborative(linked_artists, degree)
+            elif type == 'max-degree':
+                similar = self.similarity.get_max_degree(linked_artists, degree)
+            elif type == 'heat-prob':
+                similar = self.similarity.get_heat_prob(linked_artists, degree, lmb)
+            else:
+                similar = linked_artists
+            # print('calculate similarity: %.3f seconds' % round(time.time() - t, 3))
             if max_similarities > 0:
                 self.artist_similarities[_id] = sorted(similar, key=lambda x: x["similarity"], reverse=True)[:max_similarities]
             c += 1

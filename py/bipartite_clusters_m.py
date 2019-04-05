@@ -3,7 +3,13 @@ from similarity_m import ArtistSimilarity, TagSimilarity
 import numpy as np
 import progressbar as bar
 import time
-from multiprocessing import mp
+import multiprocessing as mp
+
+results = []
+PROCS = 6
+
+def collect_result(result):
+    results.append(result)
 
 class BipartiteClusters:
     def __init__(self, use_tags=True):
@@ -21,28 +27,28 @@ class BipartiteClusters:
         b = bar.ProgressBar(max_value=len(self.rec_clusters.artists))
         c = 0
         t = time.time()
-        pool = mp.Pool(8)
-        output = Queue()
+        pool = mp.Pool(PROCS)
         for _id in self.rec_clusters.artists:
             linked_artists = self.similarity.get_artists(_id, include_self)
             degree = self.similarity.get_artist_degree(_id)
-            proc = None
+            result = 0
             if type == 'collab':
-                pool.apply_async(target=self.similarity.get_collaborative, args=(linked_artists, degree, _id, output))
+                pool.apply_async(self.similarity.get_collaborative, args=(linked_artists, degree, _id, max_similarities), callback=collect_result)
             elif type == 'max-degree':
-                pool.apply_async(target=self.similarity.get_max_degree, args=(linked_artists, degree, _id, output))
+                pool.apply_async(self.similarity.get_max_degree, args=(linked_artists, degree, _id, max_similarities), callback=collect_result)
             elif type == 'heat-prob':
-                pool.apply_async(target=self.similarity.get_heat_prob, args=(linked_artists, degree, lmb, _id, output))
+                pool.apply_async(self.similarity.get_heat_prob, args=(linked_artists, degree, lmb, _id, max_similarities), callback=collect_result)
             else:
-                similar = linked_artists
+                collect_result((_id, linked_artists))
             c += 1
             b.update(c)
         b.finish()
-        pool.join()
         pool.close()
+        pool.join()
         print('total process time: %.3f seconds' % round(time.time() - t, 3))
         print('\n')
-        [print(output.get()) for _p in processes]
+        # [print(_r) for _r in results]
+        return results
 
     def calculate_tag_similarity(self, type='max-degree', lmb=1.0, max_similarities = 0):
         self.similarity = TagSimilarity(self.rec_clusters.cluster_tags, self.rec_clusters.clusters)
