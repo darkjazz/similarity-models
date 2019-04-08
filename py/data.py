@@ -175,6 +175,24 @@ class ArtistData:
 		print(track)
 		self.cdb.save(track)
 
+	def export_subset(self):
+		self.get_artists(0, True)
+		subset = { }
+		for _id in self.artists:
+			doc = self.artists[_id]
+			doc['recordings']['mfcc'] = list([ list(_r) for _r in doc['recordings']['mfcc'] ])
+			doc['recordings']['chords'] = list([ list(_r) for _r in doc['recordings']['chords'] ])
+			doc['recordings']['rhythm'] = list([ list(_r) for _r in doc['recordings']['rhythm'] ])
+			subset[_id] = doc
+		with open('../data/ab_subset_data.json', 'w') as w:
+			w.write(json.dumps(subset))
+			w.close()
+
+	def import_subset(self):
+		with open('../data/ab_subset_data.json', 'r') as r:
+			self.artists = json.load(r)
+			r.close()
+
 class ClusterData:
 	def __init__(self):
 		srv = couchdb.Server()
@@ -249,7 +267,7 @@ class DbMerger:
 class TagData:
 	def __init__(self):
 		srv = couchdb.Server()
-		self.db = srv["ab_11_plus"]
+		self.db = srv["ab_o11"]
 		self.uri = SERVER_URI
 		# self.load_subset()
 

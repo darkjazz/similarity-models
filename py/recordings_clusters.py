@@ -5,7 +5,7 @@ from data import ArtistData, ClusterData, TagData
 import time, uuid
 
 FEATURE = 'mfcc'
-MIN_CLUSTER_SIZE = 11
+MIN_CLUSTER_SIZE = 5
 
 # TRY UMAP FOR CLUSTERING!!
 
@@ -55,9 +55,10 @@ class RecordingsClusters:
 			[ self.tracks.append({ "title": _rec['title'], "artist": artist['name'], "artist_id": _id }) for _rec in artist['recordings'] ]
 			self.features = np.array(features)
 		print("%d feature vectors of %d tracks by %d artists" % (len(self.features), len(self.tracks), len(artists)))
-		print("collecting tag data ..")
-		self.tag_data.get_artist_tags()
-		print("finished collecting tags ..")
+		if self.use_tags:
+			print("collecting tag data ..")
+			self.tag_data.get_artist_tags()
+			print("finished collecting tags ..")
 
 	def make_clusters(self, min_size=11, metric='euclidean', use_soft_clustering=True):
 		print("making clusters ..")

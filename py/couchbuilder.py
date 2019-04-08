@@ -5,7 +5,7 @@ from scipy.spatial.distance import euclidean
 class CouchBuilder:
 	def __init__(self):
 		srv = couchdb.Server()
-		self.tdb = srv["ab_o11"]
+		self.tdb = srv["ab_subset"]
 		self.sdb = srv["ab_features_o15"]
 		print("Connected to databases")
 
@@ -82,9 +82,25 @@ class CouchBuilder:
 
 	def calculate_combined(self):
 		for _id in self.tdb:
-			doc = self.tdb.get(_id)
-			
-
+			if len(_id) == 36:
+				print(_id)
+				doc = self.tdb.get(_id)
+				for _ti in doc['recordings']:
+					_rec = doc['recordings'][_ti]
+					fvec = _rec['mfcc']
+					fvec.extend(_rec['chords'])
+					fvec.extend(_rec['rhythm'])
+					doc['recordings'][_ti]['combined'] = list(fvec)
+				mtx = np.array( [ doc['recordings'][_ti]['combined'] for _ti in doc['recordings'] ])
+				doc['aggregates']['combined'] = { }
+				doc['aggregates']['combined']['mean'] = list(np.mean(mtx, 0))
+				doc['aggregates']['combined']['median'] = list(np.median(mtx, 0))
+				_aggr = np.mean(mtx, 0)
+				for _ti in doc['recordings']:
+					_rec = doc['recordings'][_ti]
+					doc['recordings'][_ti]['centroid_distances']['combined'] = euclidean(_rec['combined'], _aggr)
+				re = self.tdb.save(doc)
+				print(re)
 
 	def export_ids(self):
 		id_str = ""
