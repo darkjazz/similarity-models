@@ -6,7 +6,7 @@ import time
 import multiprocessing as mp
 
 results = []
-PROCS = 6
+PROCS = 11
 
 def collect_result(result):
     results.append(result)

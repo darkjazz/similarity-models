@@ -38,6 +38,8 @@ class BipartiteClusters:
             elif type == 'heat-prob':
                 similar = self.similarity.get_heat_prob(linked_artists, degree, lmb)
             else:
+                for _a in linked_artists:
+                    _a['similarity'] = _a['ranking']
                 similar = linked_artists
             # print('calculate similarity: %.3f seconds' % round(time.time() - t, 3))
             if max_similarities > 0:
