@@ -23,8 +23,8 @@ class Plotter:
         for i, _array in enumerate(self.clusterer.exemplars_):
             [ exemplars.append(a) for a in _array ]
             [ exemplar_labels.append(i) for a in _array ]
-        print(exemplars)
-        print(exemplar_labels)
+        # print(exemplars)
+        # print(exemplar_labels)
         tsne = TSNE(n_components=2, verbose=1, perplexity=10, n_iter=2000)
         emb = tsne.fit_transform(exemplars)
         color_palette = sb.color_palette('Paired', max(exemplar_labels) + 1)
@@ -35,14 +35,14 @@ class Plotter:
     def plot_similarities(self, matrix):
         tsne = TSNE(n_components=2, verbose=1, metric='precomputed')
         emb = tsne.fit_transform(matrix)
-        print(np.shape(emb))
+        # print(np.shape(emb))
         pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)
         pl.show()
 
     def plot_similarities_labeled(self, matrix, labels):
         tsne = TSNE(n_components=2, verbose=1, metric='precomputed')
         emb = tsne.fit_transform(matrix)
-        print(np.shape(emb))
+        # print(np.shape(emb))
         pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)
         x = emb.T[0]
         y = emb.T[1]
@@ -51,13 +51,13 @@ class Plotter:
         pl.show()
 
     def plot_spanning_tree(self):
-        self.clusterer.minimum_spanning_tree_.plot(edge_cmap='viridis',
-                                      edge_alpha=0.6,
-                                      node_size=10,
-                                      edge_linewidth=1)
+        self.clusterer.minimum_spanning_tree_.plot(edge_cmap='viridis', edge_alpha=0.6, node_size=10, edge_linewidth=2)
+        pl.show()
 
     def plot_linkage_tree(self):
         self.clusterer.single_linkage_tree_.plot(cmap='viridis', colorbar=True)
+        pl.show()
 
     def plot_condensed_tree(self):
         self.clusterer.condensed_tree_.plot()
+        pl.show()
