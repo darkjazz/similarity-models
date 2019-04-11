@@ -39,7 +39,7 @@ class ArtistSimilarity(Similarity):
             for _id in _cluster:
                 if not _id in linked_artists:
                     linked_artists[_id] = { 'id': _id, 'ranking': 0, 'common_clusters': [ ] }
-                linked_artists[_id]['ranking'] += _cluster[_id]
+                linked_artists[_id]['ranking'] += ((_cluster[_id] + _cluster[id]) / 2.0)
                 linked_artists[_id]['common_clusters'].append(_num)
         for _id in linked_artists:
             linked_artists[_id]['degree'] = self.get_artist_degree(_id)

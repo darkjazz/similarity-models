@@ -12,7 +12,8 @@ class MusicLynxDbBuilder:
         self.cdbs = {
             'timbre': srv['ab_db_timbre'],
             'chords': srv['ab_db_chords'],
-            'rhythm': srv['ab_db_rhythm']
+            'rhythm': srv['ab_db_rhythm'],
+            'combined': srv['ab_db_combined']
         }
         self.clusterings = {
             'timbre': '20190228-172841-mfcc',
@@ -57,6 +58,15 @@ class MusicLynxDbBuilder:
         with open('../data/ab_db_%s.json' % similarity, 'w') as wj:
             wj.write(json.dumps(self.db))
             wj.close()
+
+    def save(self, b, m):
+        for _id in b.artist_similarities:
+            _sim = b.artist_similarities[_id]
+            self.cdbs['combined'].save({ '_id': _id, 'metric': m, 'similar': _sim })
+
+for _id in b.artist_similarities:
+    _sim = [ { 'id': _a['id'], 'similarity': _a['similarity'], 'degree': _a['degree'], 'ranking': _a['ranking'] } for _a in b.artist_similarities[_id] ]
+    m.cdbs['combined'].save({ '_id': _id, 'metric': 'rank', 'similar': _sim })
 
 if __name__ == "__main__":
     db = MusicLynxDbBuilder()
