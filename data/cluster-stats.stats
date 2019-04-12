@@ -1,0 +1,9 @@
+rhythm-H: num 12588 | max 18094 | min 8 | mean 21 | median 17
+chords: num 1399 | max 1564 | min 16 | mean 232 | median 179
+mfcc: num 1264 | max 718 | min 1 | mean 216 | median 206
+combined: num 769 | max 1200 | min 5 | mean 352 | median 340
+
+mfcc: max 23 / min 1 / mean 14.9 / median 15.0
+chords: max 23 / min 1 / mean 17.76 / median 19.0
+rhythm: max 23 / min 3 mean 14.65 / median 15.0
+combined: max 23 / min 1 / mean 14.8 / median 15.0

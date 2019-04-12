@@ -136,21 +136,22 @@ class RecordingsClusters:
 	def add_tags_to_cluster(self, track):
 		cluster = self.clusters[track['cluster']]
 		artist_id = track["artist_id"]
-		if not track['cluster'] in self.cluster_tags:
-			self.cluster_tags[track['cluster']] = { }
-		for _tag in self.tag_data.artist_tags[track['artist_id']]:
-			if _tag != 'seen live':
-				clean_tag = _tag.lower().replace("-", " ")
-				if not clean_tag in self.cluster_tags[track['cluster']]:
-					if "weight" in track:
-						self.cluster_tags[track['cluster']][clean_tag] = track["weight"]
+		if artist_id in self.tag_data.artist_tags:
+			if not track['cluster'] in self.cluster_tags:
+				self.cluster_tags[track['cluster']] = { }
+			for _tag in self.tag_data.artist_tags[artist_id]:
+				if _tag != 'seen live':
+					clean_tag = _tag.lower().replace("-", " ")
+					if not clean_tag in self.cluster_tags[track['cluster']]:
+						if "weight" in track:
+							self.cluster_tags[track['cluster']][clean_tag] = track["weight"]
+						else:
+							self.cluster_tags[track['cluster']][clean_tag] = 1
 					else:
-						self.cluster_tags[track['cluster']][clean_tag] = 1
-				else:
-					if "weight" in track:
-						self.cluster_tags[track['cluster']][clean_tag] += track["weight"]
-					else:
-						self.cluster_tags[track['cluster']][clean_tag] += 1
+						if "weight" in track:
+							self.cluster_tags[track['cluster']][clean_tag] += track["weight"]
+						else:
+							self.cluster_tags[track['cluster']][clean_tag] += 1
 
 	def add_cluster_to_artists(self, number):
 		cluster = self.clusters[number]
@@ -195,6 +196,38 @@ class RecordingsClusters:
 			artist = self.artists[_id]
 			for cluster in artist:
 				print(cluster)
+
+	def get_artist_weights(self):
+		weights = { }
+		for _id in self.artists:
+			weights[_id] = sum([ _c['weight'] for _c in self.artists[_id] ])
+		return weights
+
+	def get_artist_degrees(self):
+		degrees = { }
+		for _id in self.artists:
+			degrees[_id] = sum([ 1 for _c in self.artists[_id] ])
+		return degrees
+
+	def get_tag_weights(self):
+		weights = { }
+		for _n in self.cluster_tags:
+			for _tag in self.cluster_tags[_n]:
+				if not _tag in weights:
+					weights[_tag] = self.cluster_tags[_n][_tag]
+				else:
+					weights[_tag] += self.cluster_tags[_n][_tag]
+		return weights
+
+	def get_tag_degrees(self):
+		degrees = { }
+		for _n in self.cluster_tags:
+			for _tag in self.cluster_tags[_n]:
+				if not _tag in degrees:
+					degrees[_tag] = 1
+				else:
+					degrees[_tag] += 1
+		return degrees
 
 	def print_artist_tracks(self, id):
 		[ print(_t) for _t in self.tracks if _t['artist_id'] == id ]
