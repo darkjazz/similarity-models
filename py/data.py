@@ -280,6 +280,7 @@ class TagData:
 		self.artist_tags = { }
 		for row in self.db.view("views/tags_by_id"):
 			self.artist_tags[row.key] = row.value
+		print('loaded tags for %d artists' % len(self.artist_tags))
 
 	def get_name(self, id):
 		name = ""
