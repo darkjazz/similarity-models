@@ -132,11 +132,16 @@ class EvalSum:
 			write_csv.write(csv)
 			write_csv.close()
 
-	def write_latex_table(self):
+	def write_latex_table(self, ftr):
 		self.load()
 		mean = self.eval_sum["mean"]
 		print(mean)
 		latex = "\\begin{center}\n\\begin{tabular}{||" + self.write_table_header() + "||}\n\t\hline\n\t..."
+		for i, _abbr in enumerate(ABBR):
+			if _abbr.find(ftr) == 0 or _abbr == 'lfm':
+				MASK[i] = True
+			else:
+				MASK[i] = False
 		for name in ABBR:
 			if MASK[ABBR.index(name)]:
 				latex += " & " + name.lower()
@@ -147,7 +152,7 @@ class EvalSum:
 				for x in range(len(mean[y])):
 					if MASK[x]:
 						if not np.isnan(mean[y][x]):
-							val = str(round(mean[y][x], 4))
+							val = str(round(mean[y][x], 3))
 						else:
 							val = "0.0"
 						latex += " & " + val
