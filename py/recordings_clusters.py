@@ -1,3 +1,5 @@
+#!/usr/bin/env python -W ignore::DeprecationWarning
+
 import json, random
 import numpy as np
 import hdbscan as hd
@@ -139,19 +141,20 @@ class RecordingsClusters:
 		if artist_id in self.tag_data.artist_tags:
 			if not track['cluster'] in self.cluster_tags:
 				self.cluster_tags[track['cluster']] = { }
-			for _tag in self.tag_data.artist_tags[artist_id]:
-				if _tag != 'seen live':
-					clean_tag = _tag.lower().replace("-", " ")
-					if not clean_tag in self.cluster_tags[track['cluster']]:
-						if "weight" in track:
-							self.cluster_tags[track['cluster']][clean_tag] = track["weight"]
+			if artist_id in self.tag_data.artist_tags:
+				for _tag in self.tag_data.artist_tags[artist_id]:
+					if _tag != 'seen live':
+						clean_tag = _tag.lower().replace("-", " ")
+						if not clean_tag in self.cluster_tags[track['cluster']]:
+							if "weight" in track:
+								self.cluster_tags[track['cluster']][clean_tag] = track["weight"]
+							else:
+								self.cluster_tags[track['cluster']][clean_tag] = 1
 						else:
-							self.cluster_tags[track['cluster']][clean_tag] = 1
-					else:
-						if "weight" in track:
-							self.cluster_tags[track['cluster']][clean_tag] += track["weight"]
-						else:
-							self.cluster_tags[track['cluster']][clean_tag] += 1
+							if "weight" in track:
+								self.cluster_tags[track['cluster']][clean_tag] += track["weight"]
+							else:
+								self.cluster_tags[track['cluster']][clean_tag] += 1
 
 	def add_cluster_to_artists(self, number):
 		cluster = self.clusters[number]

@@ -2,6 +2,7 @@ import matplotlib.pyplot as pl
 import seaborn as sb
 from sklearn.manifold import TSNE
 import numpy as np
+import json
 
 class Plotter:
     def __init__(self, clusters):
@@ -60,4 +61,15 @@ class Plotter:
 
     def plot_condensed_tree(self):
         self.clusterer.condensed_tree_.plot()
+        pl.show()
+
+    def plot_histogram(self, ftr):
+        with open('../data/' + ftr + '_artist_degrees.deg', 'r') as rf:
+            x = json.load(rf)
+            rf.close()
+        pl.hist(x, 23, facecolor='b', alpha=0.7)
+        pl.xlabel('Degree')
+        pl.ylabel('# of artists')
+        pl.title('Artist degree in %s clusters' % ftr)
+        pl.grid(True)
         pl.show()

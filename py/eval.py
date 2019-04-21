@@ -25,11 +25,12 @@ class Eval:
 	def run(self):
 		bar = pb.ProgressBar(max_value=18330)
 		c = 0
-		for _id in self.dbs['ab_db_timbre_rank']:
-			self.get_lists(_id)
-			self.evaluate_artist(self.artists[_id])
-			c += 1
-			bar.update(c)
+		for _id in self.dbs['ab_o11']:
+			if len(_id) == 36:
+				self.get_lists(_id)
+				self.evaluate_artist(self.artists[_id])
+				c += 1
+				bar.update(c)
 		bar.finish()
 
 	def get_lists(self, _id):
@@ -44,6 +45,14 @@ class Eval:
 				self.artists[_id]['categories']['collab'] = _doc['categories']['collab']
 			if 'lastfm' in _doc['categories']:
 				self.artists[_id]['categories']['lastfm'] = _doc['categories']['lastfm']
+			# if 'global' in _doc['categories']:
+			# 	self.artists[_id]['categories']['global'] = _doc['categories']['global']
+			# if 'timbre-gmm' in _doc['categories']:
+			# 	self.artists[_id]['categories']['timbre-gmm'] = _doc['categories']['timbre-gmm']
+			# if 'rhythm-gmm' in _doc['categories']:
+			# 	self.artists[_id]['categories']['rhythm-gmm'] = _doc['categories']['rhythm-gmm']
+			# if 'tonality-gmm' in _doc['categories']:
+			# 	self.artists[_id]['categories']['tonality-gmm'] = _doc['categories']['tonality-gmm']
 
 	def evaluate_artist(self, artist):
 		categoriesA = list(artist['categories'].keys())
@@ -68,9 +77,22 @@ class Eval:
 		self.save_eval(artist)
 
 	def save_eval(self, artist):
-		time.sleep(0.2)
 		self.ab_eval_db.save(artist)
 		# print(artist["_id"])
+
+	def make_tag_table(self, limit=5):
+		with open('../data/tag_stats.stats', 'r') as rf:
+			tag_data = json.load(rf)
+			rf.close()
+		tbl = " ".join([ "c" for _h in tag_data ])
+		tbl = "\\begin{center}\n\\begin{tabular}{||" + tbl + "||}\n\t\hline\n\t"
+		tbl += " & ".join([ _ftr for _ftr in tag_data ])
+		tbl += " \\\ \n\t\hline\n"
+		for _i in range(limit):
+			tbl += " & ".join([ _tag['tag'] + " (" + str(_tag['degree']) + ")" for _tag in [ tag_data[_ftr][_i] for _ftr in tag_data ]])
+			tbl += " \\\ \n\t\hline\n"
+		tbl += "\end{tabular}\n\end{\center}"
+		print(tbl)
 
 class EvalSum:
 	def __init__(self):
