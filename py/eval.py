@@ -7,15 +7,41 @@ features = ['chords', 'combined', 'rhythm', 'timbre']
 similarities = ['heat-prob-0', 'heat-prob-1', 'max', 'rank']
 LIMIT = 17
 
-MASK = [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True]
-ABBR = ['ch_h0', 'co_h0', 'rh_h0', 'ti_h0', 'ch_h1', 'co_h1', 'rh_h1', 'ti_h1', 'ch_mx', 'co_mx', 'rh_mx', 'ti_mx', 'ch_rk', 'co_rk', 'rh_rk', 'ti_rk', 'collab', 'lfm']
+INCL = {
+	'ch_h0': True,
+	'co_h0': True,
+	'rh_h0': True,
+	'ti_h0': True,
+	'ch_h1': True,
+	'co_h1': True,
+	'rh_h1': True,
+	'ti_h1': True,
+	'ch_mx': True,
+	'co_mx': True,
+	'rh_mx': True,
+	'ti_mx': True,
+	'ch_rk': True,
+	'co_rk': True,
+	'rh_rk': True,
+	'ti_rk': True,
+	'lfm': True,
+	'coll': True,
+	'glob': True,
+	'max': True,
+	'ti_gm': True,
+	'rh_gm': True,
+	'co_gm': True
+}
+# MASK = [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True]
+# ABBR = ['ch_h0', 'co_h0', 'rh_h0', 'ti_h0', 'ch_h1', 'co_h1', 'rh_h1', 'ti_h1', 'ch_mx', 'co_mx', 'rh_mx', 'ti_mx', 'ch_rk', 'co_rk', 'rh_rk', 'ti_rk', 'collab', 'lfm']
+DBP_CAT = ['lastfm', 'collab', 'global', 'max-degree', 'timbre-gmm', 'rhythm-gmm', 'tonality-gmm']
 
 class Eval:
 	def __init__(self):
 		srv = couchdb.Server()
 		self.dbs = { }
 		self.eval_db = srv['eval_db']
-		self.ab_eval_db = srv['ab_db_eval_2']
+		self.ab_eval_db = srv['ab_db_eval']
 		for _sim in similarities:
 			for _f in features:
 				_name = 'ab_db_%s_%s' % (_f, _sim)
@@ -41,27 +67,17 @@ class Eval:
 		_doc = None
 		_doc = self.eval_db.get(_id)
 		if not _doc is None:
-			if 'collab' in _doc['categories']:
-				self.artists[_id]['categories']['collab'] = _doc['categories']['collab']
-			if 'lastfm' in _doc['categories']:
-				self.artists[_id]['categories']['lastfm'] = _doc['categories']['lastfm']
-			# if 'global' in _doc['categories']:
-			# 	self.artists[_id]['categories']['global'] = _doc['categories']['global']
-			# if 'timbre-gmm' in _doc['categories']:
-			# 	self.artists[_id]['categories']['timbre-gmm'] = _doc['categories']['timbre-gmm']
-			# if 'rhythm-gmm' in _doc['categories']:
-			# 	self.artists[_id]['categories']['rhythm-gmm'] = _doc['categories']['rhythm-gmm']
-			# if 'tonality-gmm' in _doc['categories']:
-			# 	self.artists[_id]['categories']['tonality-gmm'] = _doc['categories']['tonality-gmm']
+			for _category in DBP_CAT:
+				if _category in _doc['categories']:
+					self.artists[_id]['categories'][_category] = _doc['categories'][_category]
 
 	def evaluate_artist(self, artist):
 		categoriesA = list(artist['categories'].keys())
 		categoriesB = copy(categoriesA)
 		size = len(categoriesA)
-		if not "collab" in categoriesA:
-			size += 1
-		if not "lastfm" in categoriesA:
-			size += 1
+		for _category in DBP_CAT:
+			if not _category in categoriesA:
+				size += 1
 		diversity_matrix = np.full((size, size), -1.0)
 		for categoryA in categoriesA:
 			categoriesB.pop(0)
@@ -97,8 +113,8 @@ class Eval:
 class EvalSum:
 	def __init__(self):
 		couch_server = couchdb.Server()
-		self.eval_db = couch_server['ab_db_eval_2']
-		size = 18
+		self.eval_db = couch_server['ab_db_eval']
+		size = 23
 		self.diversity_sum = np.full((size, size), 0.0)
 		self.diversity_count = np.full((size, size), 0.0)
 
@@ -123,7 +139,7 @@ class EvalSum:
 		self.json["sum"] = self.diversity_sum.tolist()
 		self.json["count"] = self.diversity_count.tolist()
 		self.json["mean"] = self.diversity_mean.tolist()
-		with open("../data/eval.json", "w") as write_json:
+		with open("../data/eval_all.json", "w") as write_json:
 			write_json.write(json.dumps(self.json))
 			write_json.close()
 		print(self.diversity_sum)
@@ -131,25 +147,32 @@ class EvalSum:
 		print(self.diversity_mean)
 
 	def load(self):
-		with open("../data/eval.json", 'r') as json_file:
+		with open("../data/eval_all.json", 'r') as json_file:
 			self.eval_sum = json.load(json_file)
 
 	def write_csv(self):
 		self.load()
 		mean = self.eval_sum["mean"]
+		print(np.shape(mean))
 		csv = ""
-		for name in ABBR:
-			csv += "|" + name
+		selected_names = [ _k for (_k,_v) in INCL.items() if _v ]
+		all_names = list(INCL.keys())
+		print(selected_names, INCL.items())
+		for _name in selected_names:
+			csv += "|" + _name
 		csv += "\n"
-		for y in range(len(ABBR)):
-			csv += ABBR[y]
-			for x in range(len(mean[y])):
+		for _name in selected_names:
+			csv += _name
+			y = all_names.index(_name)
+			for _other in selected_names:
+				x = all_names.index(_other)
 				if not np.isnan(mean[y][x]):
 					val = str(round(mean[y][x], 4))
 				else:
 					val = "0.0"
 				csv += "|" + val
 			csv += "\n"
+
 		with open("../data/eval.csv", "w") as write_csv:
 			write_csv.write(csv)
 			write_csv.close()
