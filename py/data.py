@@ -4,11 +4,14 @@ import progressbar as pb
 import httplib2
 from urllib.parse import quote
 import time
+from pymongo import MongoClient, ReturnDocument
 
 MAX_RECS = 23
 MAX_NEAREST = 13
 DB_PATH = "../data/ab_db_%s.json"
 SERVER_URI = 'http://127.0.0.1:8080/lastfm/get_top_tags/'
+MONGO_URI = "mongodb://localhost:27017/"
+MONGO_DB = "deezer"
 
 class ArtistData:
 	def __init__(self):
@@ -320,3 +323,23 @@ class DbRebuilder:
 			del doc['_rev']
 			self.target.save(doc)
 			print(_id)
+
+class DeezerDb:
+	def __init__(self):
+		self.mongocli = MongoClient(MONGO_URI)
+		self.mongodb = self.mongocli[MONGO_DB]
+		self.coll = self.mongodb['artists']
+
+	def compare(self):
+		self.map = { }
+		o11 = ArtistData()
+		c = 0
+		for _id in o11.sdb:
+			dzr_id = None
+			re = self.coll.find_one({ '_id': _id })
+			if re and 'deezer_id' in re:
+				dzr_id = re['deezer_id']
+				self.map[_id] = dzr_id
+				print(_id, dzr_id)
+				c += 1
+		print(c)
