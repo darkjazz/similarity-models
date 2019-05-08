@@ -343,3 +343,115 @@ class DeezerDb:
 				print(_id, dzr_id)
 				c += 1
 		print(c)
+
+class AudioGraphBuilder:
+	def __init__(self):
+		srv = couchdb.Server()
+		self.cdb = srv['ab_db_eval']
+		self.tag_data = TagData()
+		self.data = ArtistData()
+		self.db_path = '../data/ag_db.json'
+		self.occ_db_path = '../data/ag_occ_db.json'
+		self.db_names = {
+			"ab_db_chords_heat-prob-0": "Chords Heat",
+			"ab_db_combined_heat-prob-0": "Audio Heat",
+			"ab_db_rhythm_heat-prob-0": "Rhythm Heat",
+			"ab_db_timbre_heat-prob-0": "Timbre Heat",
+			"ab_db_chords_heat-prob-1": "Chords Inference",
+			"ab_db_combined_heat-prob-1": "Audio Inference",
+			"ab_db_rhythm_heat-prob-1": "Rhythm Inference",
+			"ab_db_timbre_heat-prob-1": "Timbre Inference",
+			"ab_db_chords_max": "Chords Maximum",
+			"ab_db_combined_max": "Audio Maximum",
+			"ab_db_rhythm_max": "Rhythm Maximum",
+			"ab_db_timbre_max": "Timbre Maximum",
+			"ab_db_chords_rank": "Chords Rank",
+			"ab_db_combined_rank": "Audio Rank",
+			"ab_db_rhythm_rank": "Rhythm Rank",
+			"ab_db_timbre_rank": "Timbre Rank"
+		}
+
+	def make_db(self, num_artists = 7):
+		self.ag_db = { }
+		bar = pb.ProgressBar(max_value=len(self.cdb))
+		for _i, _id in enumerate(self.cdb):
+			doc = self.cdb[_id]
+			if "tags" in self.tag_data.db[_id]:
+				tags = self.tag_data.db[_id]["tags"][:3]
+			_artist = { 'id': doc['_id'], 'name': self.data.get_artist_name(_id) }
+			_categories = { }
+			for _category_name in self.db_names:
+				_artists = [ { 'id': _a['id'], 'name': self.get_name(_a) }
+					for _a in doc['categories'][_category_name][:num_artists] ]
+				_categories[self.db_names[_category_name]] = _artists
+			if "seen live" in tags:
+				tags.remove("seen live")
+			if tags:
+				_artist["tags"] = [ _t.lower() for _t in tags ]
+			_artist['categories'] = _categories
+			self.ag_db[_id] = _artist
+			bar.update(_i)
+		bar.finish()
+		self.write_db()
+
+	def get_name(self, artist):
+		if 'name' in artist:
+			return artist['name']
+		else:
+			return self.data.get_artist_name(artist['id'])
+
+	def make_occurrence_db(self):
+		self.read_db()
+		self.occ_db = { 'all': { } }
+		bar = pb.ProgressBar(max_value=len(self.cdb))
+		for _i, _id in enumerate(self.ag_db):
+			self.add_artists_occurrences(self.ag_db[_id]['categories'])
+			bar.update(_i)
+		bar.finish()
+		self.write_occ_db()
+
+	def add_artists_occurrences(self, _categories):
+		for _name in self.db_names:
+			if not _name in self.occ_db:
+				self.occ_db[_name] = { }
+			for _a in _categories[self.db_names[_name]]:
+				if not _a['id'] in self.occ_db[_name]:
+					self.occ_db[_name][_a['id']] = 1
+				else:
+					self.occ_db[_name][_a['id']] += 1
+				if not _a['id'] in self.occ_db['all']:
+					self.occ_db['all'][_a['id']] = 1
+				else:
+					self.occ_db['all'][_a['id']] += 1
+
+	def get_artist_occurrences(self):
+		for _name in self.occ_db:
+			occ = list(self.occ_db[_name].values())
+			# ids = list(self.occ_db[_name].keys())
+			print(_name)
+			print(np.min(occ), np.max(occ), np.mean(occ), np.median(occ))
+			threshold = sorted(occ, reverse=True)[11]
+			top = { _k:_v for _k, _v in self.occ_db[_name].items() if _v >= threshold }
+			for _it in sorted(top.items(), key=lambda kv: kv[1], reverse=True):
+				print(self.ag_db[_it[0]]['name'], _it[0], _it[1])
+			print("----\n")
+
+	def write_db(self):
+		with open(self.db_path, 'w') as wf:
+			wf.write(json.dumps(self.ag_db))
+			wf.close()
+
+	def read_db(self):
+		with open(self.db_path, 'r') as rf:
+			self.ag_db = json.load(rf)
+			rf.close()
+
+	def write_occ_db(self):
+		with open(self.occ_db_path, 'w') as wf:
+			wf.write(json.dumps(self.occ_db))
+			wf.close()
+
+	def read_occ_db(self):
+		with open(self.occ_db_path, 'r') as rf:
+			self.occ_db = json.load(rf)
+			rf.close()
