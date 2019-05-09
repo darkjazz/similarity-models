@@ -292,7 +292,7 @@ class TagData:
 		return name
 
 	def get_tags(self):
-		for _id in self.ids:
+		for _id in self.db:
 			name = self.get_name(_id)
 			uri = SERVER_URI + _id + '/' + quote(name)
 			re, co = httplib2.Http().request(uri)
@@ -300,7 +300,7 @@ class TagData:
 				res = json.loads(co)
 				if isinstance(res, list):
 					tags = [ ]
-					for _tag in res[:3]:
+					for _tag in res:
 						tags.append(_tag['name'])
 					doc = self.db.get(_id)
 					# print(doc)
