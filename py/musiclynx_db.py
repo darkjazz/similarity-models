@@ -68,6 +68,15 @@ for _id in b.artist_similarities:
     _sim = [ { 'id': _a['id'], 'similarity': _a['similarity'], 'degree': _a['degree'], 'ranking': _a['ranking'] } for _a in b.artist_similarities[_id] ]
     m.cdbs['combined'].save({ '_id': _id, 'metric': 'rank', 'similar': _sim })
 
+c = 0
+for _id in sdb:
+    _doc = None
+    _doc = edb.get(_id)
+    if not _doc is None:
+        c += 1
+
+
+
 if __name__ == "__main__":
     db = MusicLynxDbBuilder()
     db.run()
