@@ -295,7 +295,7 @@ class TagData:
 				self.artist_tokens[row.key] = _tokens
 			bar.update(_i)
 		bar.finish()
-		print('loaded tokens for %d artists' % len(self.artist_tags))
+		print('loaded tokens for %d artists' % len(self.artist_tokens))
 
 	def get_name(self, id):
 		name = ""
@@ -306,7 +306,7 @@ class TagData:
 	def write_db(self, rows):
 		sims = { }
 		print("building database ..")
-		bar = ProgressBar(max_value=len(rows))
+		bar = pb.ProgressBar(max_value=len(rows))
 		for _i, _sum in enumerate(rows):
 			if not _sum['_id'] in sims:
 				sims[_sum['_id']] = [ ]
@@ -316,7 +316,7 @@ class TagData:
 			sims[_sum['_od']].append({ '_id': _sum['_id'], 'sim': _sum['sim'] })
 			bar.update(_i)
 		bar.finish()
-		bar = ProgressBar(max_value=len(sims))
+		bar = pb.ProgressBar(max_value=len(sims))
 		for _i, _id in enumerate(sims):
 			_similar = sorted(sims[_id], key=lambda x: x["sim"], reverse=True)[:MAX_NEAREST]
 			for _artist in _similar:

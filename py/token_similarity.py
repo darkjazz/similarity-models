@@ -18,10 +18,11 @@ class TokenSimilarity:
 			_tokenA = self.data.artist_tokens[_id]
 			for _other in shrink:
 				_tokenB = self.data.artist_tokens[_other]
-				_sim = tokenA.similarity(tokenB)
+				_sim = _tokenA.similarity(_tokenB)
 				self.rows.append({ '_id': _id, '_od': _other, 'sim': _sim })
 			bar.update(_i)
 		bar.finish()
+		self.save()
 
 	def save(self):
 		self.data.write_db(self.rows)

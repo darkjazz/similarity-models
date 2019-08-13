@@ -30,7 +30,8 @@ INCL = {
 	'max': True,
 	'ti_gm': True,
 	'rh_gm': True,
-	'co_gm': True
+	'co_gm': True,
+	'token': True
 }
 # MASK = [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True]
 # ABBR = ['ch_h0', 'co_h0', 'rh_h0', 'ti_h0', 'ch_h1', 'co_h1', 'rh_h1', 'ti_h1', 'ch_mx', 'co_mx', 'rh_mx', 'ti_mx', 'ch_rk', 'co_rk', 'rh_rk', 'ti_rk', 'collab', 'lfm']
@@ -40,8 +41,10 @@ class Eval:
 	def __init__(self):
 		srv = couchdb.Server()
 		self.dbs = { }
+		self.db = srv['ab_o11']
 		self.eval_db = srv['eval_db']
 		self.ab_eval_db = srv['ab_db_eval']
+		self.token_db = srv["ab_token"]
 		for _sim in similarities:
 			for _f in features:
 				_name = 'ab_db_%s_%s' % (_f, _sim)
@@ -49,14 +52,12 @@ class Eval:
 		self.artists = { }
 
 	def run(self):
-		bar = pb.ProgressBar(max_value=18330)
-		c = 0
-		for _id in self.dbs['ab_o11']:
+		bar = pb.ProgressBar(max_value=len(self.db))
+		for _i, _id in enumerate(self.db):
 			if len(_id) == 36:
 				self.get_lists(_id)
 				self.evaluate_artist(self.artists[_id])
-				c += 1
-				bar.update(c)
+				bar.update(_i)
 		bar.finish()
 
 	def get_lists(self, _id):
@@ -70,6 +71,10 @@ class Eval:
 			for _category in DBP_CAT:
 				if _category in _doc['categories']:
 					self.artists[_id]['categories'][_category] = _doc['categories'][_category]
+		_doc = None
+		_doc = self.token_db.get(_id)
+		if not _doc is None:
+			self.artists[_id]['categories']['token'] = [ { "id": _a["_id"], "name": _a["name"], "sim": _a["sim"] } for _a in _doc["similar"] ]
 
 	def evaluate_artist(self, artist):
 		categoriesA = list(artist['categories'].keys())
@@ -78,6 +83,8 @@ class Eval:
 		for _category in DBP_CAT:
 			if not _category in categoriesA:
 				size += 1
+		if not "token" in categoriesA:
+			size += 1
 		diversity_matrix = np.full((size, size), -1.0)
 		for categoryA in categoriesA:
 			categoriesB.pop(0)
@@ -114,15 +121,15 @@ class EvalSum:
 	def __init__(self):
 		couch_server = couchdb.Server()
 		self.eval_db = couch_server['ab_db_eval']
-		size = 23
+		size = len(INCL)
 		self.diversity_sum = np.full((size, size), 0.0)
 		self.diversity_count = np.full((size, size), 0.0)
 
 	def run(self):
-		bar = pb.ProgressBar(max_value=18330)
-		c = 0
-		for _id in self.eval_db:
+		bar = pb.ProgressBar(max_value=len(self.eval_db))
+		for _i, _id in enumerate(self.eval_db):
 			matrix = self.eval_db[_id]["diversity_matrix"]
+			# print(_id, np.shape(matrix))
 			for y in range(len(matrix)):
 				rowsum = np.array(matrix[y])
 				np.place(rowsum, rowsum==-1.0, [np.nan])
@@ -131,8 +138,7 @@ class EvalSum:
 				np.place(rowcount, rowcount>-1.0, [1])
 				np.place(rowcount, rowcount==-1.0, [0])
 				self.diversity_count[y] = np.nansum(np.vstack((self.diversity_count[y], rowcount)), axis=0 )
-			c+= 1
-			bar.update(c)
+			bar.update(_i)
 		bar.finish()
 		self.diversity_mean = np.divide(self.diversity_sum, self.diversity_count)
 		self.json = {}
@@ -142,6 +148,7 @@ class EvalSum:
 		with open("../data/eval_all.json", "w") as write_json:
 			write_json.write(json.dumps(self.json))
 			write_json.close()
+		print("Wrote data to eval_all.json")
 		print(self.diversity_sum)
 		print(self.diversity_count)
 		print(self.diversity_mean)
