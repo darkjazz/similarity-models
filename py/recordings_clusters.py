@@ -24,13 +24,13 @@ class RecordingsClusters:
 		for row in self.data.cdb.view("views/clusterings", group=True):
 			print(row.key, row.value)
 
-	def run(self, feature='mfcc', num_artists=-1, use_subset=True, save=False, use_soft_clustering=True):
+	def run(self, feature='mfcc', num_artists=-1, use_subset=True, use_mirex=False, save=False, use_soft_clustering=True):
 		self.timestamp = time.strftime("%Y%m%d-%H%M%S")
 		self.feature = feature
 		self.use_soft_clustering = use_soft_clustering
 		start = time.time()
 		t = time.time()
-		self.select_data(feature, num_artists, use_subset)
+		self.select_data(feature, num_artists, use_subset, use_mirex)
 		print("processing time: %.3f seconds" % round(time.time() - t, 3))
 		t = time.time()
 		self.make_clusters(use_soft_clustering=use_soft_clustering)
@@ -45,9 +45,9 @@ class RecordingsClusters:
 		if save:
 			self.save_tracks()
 
-	def select_data(self, feature, num_artists, use_subset):
+	def select_data(self, feature, num_artists, use_subset, use_mirex):
 		print("selecting recordings ...")
-		artists = self.data.get_cluster_artists(feature, num_artists, use_subset)
+		artists = self.data.get_cluster_artists(feature, num_artists, use_subset, use_mirex)
 		features = []
 		self.tracks = []
 		print("collecting track features ...")

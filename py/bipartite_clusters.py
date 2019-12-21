@@ -5,8 +5,11 @@ import progressbar as bar
 import time
 
 class BipartiteClusters:
-    def __init__(self, use_tags=True):
-        self.rec_clusters = RecordingsClusters(use_tags)
+    def __init__(self, use_tags=True, rec_clusters=None):
+        if rec_clusters is None:
+            self.rec_clusters = RecordingsClusters(use_tags)
+        else:
+            self.rec_clusters = rec_clusters
 
     def make_clusters(self, feature='mfcc', use_soft_clustering=True):
         self.rec_clusters.run(feature, use_soft_clustering=use_soft_clustering)

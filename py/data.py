@@ -6,7 +6,7 @@ from urllib.parse import quote
 import time
 from pymongo import MongoClient, ReturnDocument
 
-MAX_RECS = 23
+MAX_RECS = 37
 MAX_NEAREST = 17
 DB_PATH = "../data/ab_db_%s.json"
 SERVER_URI = 'http://127.0.0.1:8080/lastfm/get_top_tags/'
@@ -54,10 +54,13 @@ class ArtistData:
 	def select(self, recordings, feature):
 		return sorted(recordings, key=lambda x: x["centroid_distances"][feature])[:MAX_RECS]
 
-	def get_cluster_artists(self, feature='mfcc', limit=0, use_subset=False):
+	def get_cluster_artists(self, feature='mfcc', limit=0, use_subset=False, use_mirex=False):
 		self.artists = { }
 		if use_subset:
 			ids = self.load_subset()
+		elif use_mirex:
+			self.mirex_data = self.load_mirex_data()
+			ids = list(self.mirex_data.keys())
 		else:
 			if limit > 0:
 				ids = self.load_ids(limit)
@@ -87,6 +90,14 @@ class ArtistData:
 			return ids
 		else:
 			return ids[:limit]
+
+	def load_mirex_data(self):
+		with open('../data/dataset-artist-similarity/mirex_gold.txt') as rf:
+			rows = rf.read().split('\n')
+		mirex_data = { _id: _row.split(' ') for _id, _row in
+			[ (_row.split('\t')[0], _row.split('\t')[1]) for _row in rows[:-1] ]
+		}
+		return mirex_data
 
 	def load_subset(self):
 		with open("../data/ab_subset.json") as js:
@@ -490,3 +501,30 @@ class AudioGraphBuilder:
 		with open(self.occ_db_path, 'r') as rf:
 			self.occ_db = json.load(rf)
 			rf.close()
+
+class SimilarityDb:
+	def __init__(self):
+		self.artist_data = ArtistData()
+		self.db = couchdb.Server()['similarity_models']
+		self.load_mirex_data()
+
+	def load_mirex_data(self):
+		self.mirex_data = self.artist_data.load_mirex_data()
+		self.names = { }
+		for _id in self.mirex_data:
+			self.names[_id] = self.artist_data.get_artist_name(_id)
+
+	def init_db(self):
+		self.load_mirex_data()
+		for _id in self.mirex_data:
+			doc = { '_id': _id }
+			similar = [ { 'id': _oid, 'name': self.names[_oid] } for _oid in self.mirex_data[_id] ]
+			doc['mirex'] = similar
+			self.db.save(doc)
+
+	def save(self, artist_similarities, feature, similarity):
+		for _id in artist_similarities:
+			doc = self.db.get(_id)
+			similar = [ { 'id': _a['id'], 'name': self.names[_a['id']] } for _a in artist_similarities[_id] ]
+			doc['%s-%s' % (feature, similarity)] = similar
+			self.db.save(doc)
