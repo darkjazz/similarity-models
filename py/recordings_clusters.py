@@ -7,9 +7,7 @@ from data import ArtistData, ClusterData, TagData
 import time, uuid
 
 FEATURE = 'mfcc'
-MIN_CLUSTER_SIZE = 11
-
-# TRY UMAP FOR CLUSTERING!!
+MIN_CLUSTER_SIZE = 5
 
 class RecordingsClusters:
 	def __init__(self, use_tags):

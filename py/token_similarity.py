@@ -1,5 +1,5 @@
 import spacy
-from data import TagData
+from data import TagData, ArtistData
 import progressbar as pb
 
 class TokenSimilarity:
@@ -8,7 +8,9 @@ class TokenSimilarity:
 		self.data = TagData()
 
 	def run(self):
-		self.data.get_artist_tokens(self.nlp)
+		artist_data = ArtistData()
+		ids = artist_data.load_mirex_data()
+		self.data.get_tokens_by_ids(ids, self.nlp)
 		self.ids = list(self.data.artist_tokens.keys())
 		shrink = self.ids.copy()
 		self.rows = []

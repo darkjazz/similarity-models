@@ -40,8 +40,8 @@ class Plotter:
         pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)
         pl.show()
 
-    def plot_similarities_labeled(self, matrix, labels):
-        tsne = TSNE(n_components=2, verbose=1, metric='precomputed')
+    def plot_similarities_labeled(self, matrix, labels, n_iter, perplexity):
+        tsne = TSNE(n_components=2, verbose=1, perplexity=perplexity, n_iter=n_iter, metric='precomputed')
         emb = tsne.fit_transform(matrix)
         # print(np.shape(emb))
         pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)

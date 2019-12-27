@@ -6,7 +6,7 @@ from urllib.parse import quote
 import time
 from pymongo import MongoClient, ReturnDocument
 
-MAX_RECS = 37
+MAX_RECS = 47
 MAX_NEAREST = 17
 DB_PATH = "../data/ab_db_%s.json"
 SERVER_URI = 'http://127.0.0.1:8080/lastfm/get_top_tags/'
@@ -308,6 +308,21 @@ class TagData:
 		bar.finish()
 		print('loaded tokens for %d artists' % len(self.artist_tokens))
 
+	def get_tokens_by_ids(self, ids, nlp):
+		self.artist_tokens = { }
+		bar = pb.ProgressBar(max_value=len(ids))
+		for _i, _id in enumerate(ids):
+			try:
+				_tags = self.db.get(_id)['tags']
+				_tokens = nlp(" ".join(_tags))
+				if _tokens.vector_norm:
+					self.artist_tokens[_id] = _tokens
+			except:
+				pass
+			bar.update(_i)
+		bar.finish()
+		print('loaded tokens for %d artists' % len(self.artist_tokens))
+
 	def get_name(self, id):
 		name = ""
 		for _row in self.db.view("views/name_by_id", key=id):
@@ -515,9 +530,8 @@ class SimilarityDb:
 			self.names[_id] = self.artist_data.get_artist_name(_id)
 
 	def init_db(self):
-		self.load_mirex_data()
 		for _id in self.mirex_data:
-			doc = { '_id': _id }
+			doc = { '_id': _id, 'name': self.names[_id] }
 			similar = [ { 'id': _oid, 'name': self.names[_oid] } for _oid in self.mirex_data[_id] ]
 			doc['mirex'] = similar
 			self.db.save(doc)
@@ -528,3 +542,21 @@ class SimilarityDb:
 			similar = [ { 'id': _a['id'], 'name': self.names[_a['id']] } for _a in artist_similarities[_id] ]
 			doc['%s-%s' % (feature, similarity)] = similar
 			self.db.save(doc)
+
+	def add_lastfm(self):
+		lfmdb = couchdb.Server()['ab_db_eval']
+		for _id in self.db:
+			_res = lfmdb.view('views/lastfm', key=_id)
+			if _res:
+				_lfm = [ _row for _row in _res ][0].value
+				_doc = self.db.get(_id)
+				_doc['lastfm'] = _lfm
+				self.db.save(_doc)
+
+	def add_empty_lastfm(self):
+		for _id in self.db:
+			if not 'lastfm' in self.db[_id]:
+				_doc = self.db[_id]
+				_doc['lastfm'] = []
+				self.db.save(_doc)
+				print(_id)
