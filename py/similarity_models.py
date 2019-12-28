@@ -143,7 +143,7 @@ class SimilarityModels:
 
 		print("Wrote ../data/eval_mirex.csv")
 
-	def plot_distance_matrix(self):
+	def plot_distance_matrix(self, n_iter, perplexity):
 		self.load_matrix()
 		plotter = Plotter(None)
-		plotter.plot_similarities_labeled(1.0-self.mean, self.categories)
+		plotter.plot_similarities_labeled(1.0-self.mean, self.categories, n_iter, perplexity)

@@ -44,11 +44,11 @@ class Plotter:
         tsne = TSNE(n_components=2, verbose=1, perplexity=perplexity, n_iter=n_iter, metric='precomputed')
         emb = tsne.fit_transform(matrix)
         # print(np.shape(emb))
-        pl.scatter(*emb.T,s=17, linewidth=0, alpha=0.75)
+        pl.scatter(*emb.T,s=57, linewidth=0, alpha=0.75)
         x = emb.T[0]
         y = emb.T[1]
         for i, txt in enumerate(labels):
-            pl.text(x[i], y[i], txt, fontsize=8)
+            pl.text(x[i] - 13, y[i] + 11, txt, fontsize=11)
         pl.show()
 
     def plot_spanning_tree(self):
